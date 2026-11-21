@@ -51,6 +51,7 @@ public static class AppHost
     private static IpcServer? s_ipc;
     private static bool s_isolatedBrowser;
     private static Microsoft.UI.Dispatching.DispatcherQueueTimer? s_idle;
+    private static bool s_probedWithWindow;
 
     public static void Register(string id, Func<IAppModule> factory) => s_factories[id] = factory;
 
@@ -122,6 +123,13 @@ public static class AppHost
         {
             var sw = Stopwatch.StartNew();
             var module = factory();
+            if (!s_probedWithWindow)
+            {
+                // GPU capabilities are only reported correctly once a window exists: re-resolve quality now,
+                // before the window is shown, so it opens with the right materials (no solid-to-Mica switch).
+                s_probedWithWindow = true;
+                ApplySettings(SettingsStore.Instance.Current);
+            }
             s_open[id] = module;
             module.Frame.Closed += () => { s_open.Remove(id); if (s_open.Count == 0) s_idle?.Start(); };
             module.HandleArgs(parsed);
@@ -143,13 +151,11 @@ public static class AppHost
     public static void ShellCommand(string command) => _ = IpcClient.SendAsync(IpcNames.Shell, IpcMessage.Create(ShellMessages.Command, command));
 }
 
-/// <summary>Module registry. Each module registers its factory here.</summary>
-public static partial class Modules
+/// <summary>Module registry: an explicit list (no reflection), so it stays trim- and AOT-safe (ADR-017).</summary>
+public static class Modules
 {
     public static void RegisterAll()
     {
-        foreach (var m in typeof(Modules).GetMethods(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
-                     .Where(m => m.Name.StartsWith("Register", StringComparison.Ordinal) && m.Name != nameof(RegisterAll) && m.GetParameters().Length == 0))
-            m.Invoke(null, null);
+        AppHost.Register("settings", () => new Settings.SettingsApp());
     }
 }

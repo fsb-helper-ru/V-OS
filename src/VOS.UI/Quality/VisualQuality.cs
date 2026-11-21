@@ -21,6 +21,11 @@ public static class VisualQuality
     }
 
     /// <summary>Composition capability check: whether effects are supported and fast on this GPU/session.</summary>
+    /// <summary>
+    /// GPU effect capabilities. Only meaningful once a XAML window exists in the process: before that,
+    /// CompositionCapabilities reports effects as "not fast" (a bare Compositor is not enough), so callers probe
+    /// again after creating their first window.
+    /// </summary>
     public static (bool supported, bool fast) Capabilities()
     {
         try

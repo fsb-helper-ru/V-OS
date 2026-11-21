@@ -217,6 +217,9 @@ public sealed class CommandRunner(ShellHost host)
             case "settings": OpenApp("settings", arg); return true;
             case "workspace": host.Workspaces.Switch(arg); return true;
             case "theme": SetTheme(arg); return true;
+            case "clipboard":
+                if (arg == "clear") host.ClipboardHistory?.ClearUnpinned();
+                return true;
             case "focus": host.SetFocus(arg switch { "on" => true, "off" => false, _ => !host.FocusOn }); return true;
             case "timer":
                 var t = arg.Split(':', 2);

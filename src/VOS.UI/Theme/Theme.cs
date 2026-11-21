@@ -144,6 +144,26 @@ public sealed class ThemeService
         ("SubtleFillColorSecondaryBrush", "Vos.ControlHover"), ("SubtleFillColorTertiaryBrush", "Vos.ControlPressed"), ("DividerStrokeColorDefaultBrush", "Vos.StrokeSubtle"),
         ("FocusStrokeColorOuterBrush", "Vos.TextPrimary"), ("SystemFillColorCriticalBrush", "Vos.Critical"), ("SystemFillColorSuccessBrush", "Vos.Success"),
         ("SystemFillColorCautionBrush", "Vos.Warning"),
+        // Control-specific keys are StaticResource aliases inside XamlControlsResources, resolved within that dictionary,
+        // so overriding the base keys above does not reach them. Point them straight at the mutable V-OS brushes
+        // (this also makes runtime accent changes apply to standard controls without a theme refresh).
+        ("ToggleSwitchFillOn", "Vos.Accent"), ("ToggleSwitchFillOnPointerOver", "Vos.AccentHover"), ("ToggleSwitchFillOnPressed", "Vos.AccentPressed"),
+        ("ToggleSwitchStrokeOn", "Vos.Accent"), ("ToggleSwitchStrokeOnPointerOver", "Vos.AccentHover"), ("ToggleSwitchStrokeOnPressed", "Vos.AccentPressed"),
+        ("ToggleSwitchKnobFillOn", "Vos.OnAccent"), ("ToggleSwitchKnobFillOnPointerOver", "Vos.OnAccent"), ("ToggleSwitchKnobFillOnPressed", "Vos.OnAccent"),
+        ("SliderTrackValueFill", "Vos.Accent"), ("SliderTrackValueFillPointerOver", "Vos.AccentHover"), ("SliderTrackValueFillPressed", "Vos.AccentPressed"),
+        ("SliderThumbBackground", "Vos.Accent"), ("SliderThumbBackgroundPointerOver", "Vos.AccentHover"), ("SliderThumbBackgroundPressed", "Vos.AccentPressed"),
+        ("CheckBoxCheckBackgroundFillChecked", "Vos.Accent"), ("CheckBoxCheckBackgroundFillCheckedPointerOver", "Vos.AccentHover"), ("CheckBoxCheckBackgroundFillCheckedPressed", "Vos.AccentPressed"),
+        ("CheckBoxCheckBackgroundStrokeChecked", "Vos.Accent"), ("CheckBoxCheckGlyphForegroundChecked", "Vos.OnAccent"),
+        ("CheckBoxCheckGlyphForegroundCheckedPointerOver", "Vos.OnAccent"), ("CheckBoxCheckGlyphForegroundCheckedPressed", "Vos.OnAccent"),
+        ("RadioButtonOuterEllipseCheckedFill", "Vos.Accent"), ("RadioButtonOuterEllipseCheckedFillPointerOver", "Vos.AccentHover"), ("RadioButtonOuterEllipseCheckedFillPressed", "Vos.AccentPressed"),
+        ("RadioButtonOuterEllipseCheckedStroke", "Vos.Accent"), ("RadioButtonOuterEllipseCheckedStrokePointerOver", "Vos.AccentHover"), ("RadioButtonOuterEllipseCheckedStrokePressed", "Vos.AccentPressed"),
+        ("RadioButtonCheckGlyphFill", "Vos.OnAccent"), ("RadioButtonCheckGlyphFillPointerOver", "Vos.OnAccent"), ("RadioButtonCheckGlyphFillPressed", "Vos.OnAccent"),
+        ("AccentButtonBackground", "Vos.Accent"), ("AccentButtonBackgroundPointerOver", "Vos.AccentHover"), ("AccentButtonBackgroundPressed", "Vos.AccentPressed"),
+        ("AccentButtonForeground", "Vos.OnAccent"), ("AccentButtonForegroundPointerOver", "Vos.OnAccent"), ("AccentButtonForegroundPressed", "Vos.OnAccent"),
+        ("HyperlinkButtonForeground", "Vos.AccentText"), ("HyperlinkButtonForegroundPointerOver", "Vos.AccentHover"), ("HyperlinkButtonForegroundPressed", "Vos.AccentPressed"),
+        ("ProgressBarForeground", "Vos.Accent"), ("ProgressRingForegroundThemeBrush", "Vos.Accent"),
+        ("ComboBoxItemPillFillBrush", "Vos.Accent"), ("ListViewItemSelectionIndicatorBrush", "Vos.Accent"), ("NavigationViewSelectionIndicatorForeground", "Vos.Accent"),
+        ("TextControlSelectionHighlightColor", "Vos.Accent"),
     ];
 
     /// <summary>Resolves theme and accent from settings (and Windows, for Auto / System sources) and applies them.</summary>
@@ -212,12 +232,59 @@ public sealed class ThemeService
         Set("Vos.GlassSolid", p.IsDark ? Colors2.Hex("#1A1B20") : Colors2.Hex("#F7F8FA"));
         Set("Vos.GlassRim", p.IsDark ? Color.FromArgb(0x24, 255, 255, 255) : Color.FromArgb(0x40, 255, 255, 255));
         Set("Vos.Success", p.Success); Set("Vos.Warning", p.Warning); Set("Vos.Critical", p.Critical);
+        // App content layer over Mica, and cards on that layer (Windows 11 layering, V-OS graphite tones).
+        Set("Vos.Layer", p.IsDark ? Color.FromArgb(0x52, 0x22, 0x24, 0x2A) : Color.FromArgb(0x80, 255, 255, 255));
+        Set("Vos.Card", p.IsDark ? Color.FromArgb(0x0E, 255, 255, 255) : Color.FromArgb(0xB3, 255, 255, 255));
+        Set("Vos.CardHover", p.IsDark ? Color.FromArgb(0x16, 255, 255, 255) : Color.FromArgb(0xE6, 255, 255, 255));
+        Set("Vos.SuccessSubtle", Colors2.WithAlpha(p.Success, 0x24)); Set("Vos.WarningSubtle", Colors2.WithAlpha(p.Warning, 0x24)); Set("Vos.CriticalSubtle", Colors2.WithAlpha(p.Critical, 0x24));
+        RetintControlBrushes(effectiveAccent, Brush("Vos.AccentHover").Color, Brush("Vos.AccentPressed").Color, Brush("Vos.AccentText").Color, onAccent);
         foreach (var r in _roots.ToList())
         {
             if (r.TryGetTarget(out var fe)) fe.RequestedTheme = ElementTheme;
             else _roots.Remove(r);
         }
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Standard control templates hold references to the brush instances in XamlControlsResources (resolved when that
+    /// dictionary loads), so keys added later never reach them. Re-colour those shared instances instead: every
+    /// control that uses the accent (toggles, sliders, check boxes, radio buttons, accent buttons, links, dialogs,
+    /// popups) follows the V-OS accent, at start and after every change.
+    /// </summary>
+    private static void RetintControlBrushes(Color accent, Color hover, Color pressed, Color text, Color onAccent)
+    {
+        if (Application.Current?.Resources is not { } app) return;
+        foreach (var dict in app.MergedDictionaries.Append(app))
+            foreach (var themeKey in new[] { "Default", "Dark", "Light" })
+            {
+                if (!dict.ThemeDictionaries.TryGetValue(themeKey, out var o) || o is not ResourceDictionary td) continue;
+                Tint(td, "AccentFillColorDefaultBrush", accent);
+                Tint(td, "AccentFillColorSecondaryBrush", hover);
+                Tint(td, "AccentFillColorTertiaryBrush", pressed);
+                Tint(td, "AccentFillColorSelectedTextBackgroundBrush", accent);
+                Tint(td, "AccentTextFillColorPrimaryBrush", text);
+                Tint(td, "AccentTextFillColorSecondaryBrush", text);
+                Tint(td, "AccentTextFillColorTertiaryBrush", hover);
+                Tint(td, "TextOnAccentFillColorPrimaryBrush", onAccent);
+                Tint(td, "TextOnAccentFillColorSecondaryBrush", Colors2.WithAlpha(onAccent, 0xB3));
+                Tint(td, "SystemControlHighlightAccentBrush", accent);
+                Tint(td, "SystemControlForegroundAccentBrush", text);
+                Tint(td, "SystemControlBackgroundAccentBrush", accent);
+            }
+    }
+
+    private static void Tint(ResourceDictionary d, string key, Color c)
+    {
+        if (Find(d, key, 0) is SolidColorBrush b && b.Color != c) b.Color = c;
+    }
+
+    private static object? Find(ResourceDictionary d, string key, int depth)
+    {
+        if (d.TryGetValue(key, out var v)) return v;
+        if (depth > 4) return null;
+        foreach (var m in d.MergedDictionaries) if (Find(m, key, depth + 1) is { } x) return x;
+        return null;
     }
 
     /// <summary>Keeps a window root's RequestedTheme in sync (for built-in control templates).</summary>
