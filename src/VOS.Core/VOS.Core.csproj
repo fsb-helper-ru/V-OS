@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- V-Core: process-independent services (settings, storage, IPC, models, providers). No UI. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>VOS.Core</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="VosUpdateFeed" Value="$(VosUpdateFeed)" />
+    <AssemblyMetadata Include="VosBuildTime" Value="$([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ'))" Condition="'$(ContinuousIntegrationBuild)' != 'true'" />
+    <InternalsVisibleTo Include="VOS.Tests" />
+  </ItemGroup>
+</Project>

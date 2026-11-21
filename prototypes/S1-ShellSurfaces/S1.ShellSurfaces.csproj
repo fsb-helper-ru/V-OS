@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Spike S1 (ADR-001): validates WinUI 3 shell surfaces on real hardware. Not shipped. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(VosWindowsTfm)</TargetFramework>
+    <TargetPlatformMinVersion>$(VosMinWindows)</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>$(VosMinWindows)</SupportedOSPlatformVersion>
+    <RootNamespace>S1</RootNamespace>
+    <AssemblyName>S1.ShellSurfaces</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CS8305;CsWinRT1028;CsWinRT1030</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" />
+  </ItemGroup>
+</Project>

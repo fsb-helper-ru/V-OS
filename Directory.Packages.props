@@ -1,0 +1,24 @@
+<Project>
+  <!-- Central package versions. Every dependency must justify itself in DEPENDENCIES.md. -->
+  <ItemGroup>
+    <!-- UI foundation (ADR-001) -->
+    <!-- Component package instead of the Microsoft.WindowsAppSDK metapackage: brings WinUI, Foundation,
+         InteractiveExperiences and Base only (no AI/ML/Search/Widgets, no 165 MB MSIX runtime installers). -->
+    <PackageVersion Include="Microsoft.WindowsAppSDK.WinUI" Version="2.7.0" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
+    <PackageVersion Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+    <PackageVersion Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+    <PackageVersion Include="CommunityToolkit.WinUI.Controls.Sizers" Version="8.2.251219" />
+    <!-- Platform and modules -->
+    <PackageVersion Include="Microsoft.Web.WebView2" Version="1.0.4370.26" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.15" />
+    <PackageVersion Include="System.Management" Version="10.0.15" />
+    <PackageVersion Include="System.Data.OleDb" Version="10.0.15" />
+    <PackageVersion Include="QRCoder" Version="1.9.0" />
+    <!-- Tests -->
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <PackageVersion Include="FlaUI.UIA3" Version="5.0.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,38 @@
+<Project>
+  <!-- Shared build settings for every V-OS project. -->
+  <PropertyGroup>
+    <VosVersion Condition="'$(VosVersion)' == ''">1.0.0</VosVersion>
+    <Version>$(VosVersion)</Version>
+    <AssemblyVersion>$(VosVersion).0</AssemblyVersion>
+    <FileVersion>$(VosVersion).0</FileVersion>
+    <InformationalVersion>$(VosVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Company>V-OS Project</Company>
+    <Product>V-OS</Product>
+    <Copyright>Copyright (c) 2026 V-OS Project</Copyright>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <NoWarn>$(NoWarn);CA1416;NU1701;CS1591;SYSLIB1054;CA2101;WFAC010</NoWarn>
+    <VosWindowsTfm>net10.0-windows10.0.26100.0</VosWindowsTfm>
+    <VosMinWindows>10.0.19041.0</VosMinWindows>
+    <TieredPGO>true</TieredPGO>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <!-- Optional short build root (Windows MAX_PATH safety when the repo lives in a deep folder). -->
+  <PropertyGroup Condition="'$(VOS_BUILD_ROOT)' != '' and '$(_TargetAssemblyProjectName)' == ''">
+    <BaseIntermediateOutputPath>$(VOS_BUILD_ROOT)\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(VOS_BUILD_ROOT)\bin\$(MSBuildProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VOS_BUILD_ROOT)' != '' and '$(_TargetAssemblyProjectName)' != ''">
+    <BaseOutputPath>$(VOS_BUILD_ROOT)\bin\$(_TargetAssemblyProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

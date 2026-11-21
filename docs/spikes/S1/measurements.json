@@ -1,0 +1,42 @@
+﻿{
+    "runs":  [
+                 "--pill exit=0",
+                 "--dock exit=0",
+                 "--appbar exit=0"
+             ],
+    "idle":  {
+                 "mode":  "--idle",
+                 "launchToReadyMs":  859,
+                 "appReported":  {
+                                     "processStartToFirstFrameMs":  780,
+                                     "showToFirstFrameMs":  67.7,
+                                     "mode":  "idle"
+                                 },
+                 "measuredSeconds":  30,
+                 "cpuSeconds":  0.141,
+                 "cpuPercentOfMachine":  0.059,
+                 "cpuPercentOfOneCore":  0.47,
+                 "privateMB":  98.2,
+                 "workingSetMB":  118.8,
+                 "threads":  39,
+                 "handles":  954
+             },
+    "animate":  {
+                    "mode":  "--anim",
+                    "launchToReadyMs":  1078,
+                    "appReported":  {
+                                        "processStartToFirstFrameMs":  1018,
+                                        "showToFirstFrameMs":  304.4,
+                                        "mode":  "animate"
+                                    },
+                    "measuredSeconds":  20,
+                    "cpuSeconds":  1.906,
+                    "cpuPercentOfMachine":  1.191,
+                    "cpuPercentOfOneCore":  9.52,
+                    "privateMB":  99.5,
+                    "workingSetMB":  120.2,
+                    "threads":  40,
+                    "handles":  953
+                },
+    "logicalCores":  8
+}

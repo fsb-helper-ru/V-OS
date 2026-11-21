@@ -1,0 +1,20 @@
+# Build output
+bin/
+obj/
+.build/
+artifacts/
+*.user
+*.suo
+.vs/
+.idea/
+*_wpftmp.csproj
+TestResults/
+# Signing material must never be committed
+.keys/
+*.pfx
+*.pem
+!assets/**/*.pem.pub
+# Personal Claude Code settings stay local
+.claude/settings.local.json
+# Spike output (evidence is copied to docs/spikes)
+prototypes/**/results/

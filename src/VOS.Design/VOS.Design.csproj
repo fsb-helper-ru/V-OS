@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- V-Design: the shared design system (tokens, controls, motion, icons, window chrome). -->
+  <PropertyGroup>
+    <TargetFramework>$(VosWindowsTfm)</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>VOS.Design</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VOS.Core\VOS.Core.csproj" />
+    <ProjectReference Include="..\VOS.Platform\VOS.Platform.csproj" />
+  </ItemGroup>
+</Project>

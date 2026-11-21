@@ -1,0 +1,26 @@
+{
+  "dock.showToFirstFrameMs": 19,
+  "dock.transparency.matchAboveSlab": 1,
+  "dock.glass.backgroundLuma": [
+    176.4,
+    64.7
+  ],
+  "dock.glass.slabLuma": [
+    65,
+    0.4
+  ],
+  "dock.glass.contrastRetained": 0.006,
+  "dock.stockAcrylicChipLuma": [
+    44,
+    1
+  ],
+  "dock.magnify.overflowPixel": "rgb(137,197,255) vs background rgb(232,236,244)",
+  "dock.magnify.overflowDrawn": true,
+  "dock.hit.magnifiedIconOverflow": true,
+  "dock.hit.slab": true,
+  "dock.hit.emptyAreaPassesThrough": true,
+  "dock.hit.chipAreaPassesThrough": true,
+  "thumbnail.registerHr": 0,
+  "thumbnail.updateHr": 0,
+  "thumbnail.magentaCoverage": 1
+}
