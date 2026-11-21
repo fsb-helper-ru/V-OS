@@ -57,6 +57,20 @@ public static class AppHost
 
     public static void Register(string id, Func<IAppModule> factory) => s_factories[id] = factory;
 
+    /// <summary>Closes every window the normal way (modules save as they close), then exits. Sent by the updater and
+    /// the uninstaller before they replace or remove the app files.</summary>
+    private static void QuitAll()
+    {
+        Log.Info("Quit requested", new { windows = s_open.Count });
+        foreach (var module in s_open.Values.ToList())
+        {
+            try { module.Frame.Window.Close(); }
+            catch (Exception ex) { Log.Warn("Window did not close cleanly", ex); }
+        }
+        Log.Flush();
+        Application.Current.Exit();
+    }
+
     public static void Start(string[] args)
     {
         if (args.Length == 0) { Application.Current.Exit(); return; }
@@ -79,6 +93,7 @@ public static class AppHost
         {
             if (m.Type == "ping") return Task.FromResult<IpcMessage?>(IpcMessage.Create("pong"));
             if (m.Type == "open" && m.Read<OpenRequest>() is { } req) UiThread.Post(() => Open(req.Id, req.Args));
+            if (m.Type == "quit") UiThread.Post(QuitAll);
             return Task.FromResult<IpcMessage?>(null);
         });
         s_ipc.Start();

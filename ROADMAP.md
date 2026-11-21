@@ -37,9 +37,12 @@ _Last updated: 2026-11-22._
 - ✅ Translate · Connect · Flow editor · Assistant (on this PC, Claude, Ollama; ADR-018)
 
 ## Phase 5 — Delivery
-- 🔄 WinUI installer and maintenance UI (`--launcher`): first version exists; full install, repair, update, rollback and uninstall flows to finish
-- ⬜ Bootstrapper `V-Launcher.exe` (single file) · updater with signed feed · rollback · recovery · uninstall
-- ⬜ Reproducible `build/build.ps1` · GitHub Actions CI and release workflow (needs H1)
+- ✅ Bootstrapper `V-Launcher.exe` (single file, task dialogs): install, repair, apply update with automatic rollback, rollback, uninstall
+- ✅ WinUI launcher (`--launcher`): setup completion and registration, signed updates, rollback, repair, recovery, diagnostics export, uninstall
+- ✅ Reproducible `build/build.ps1` with `VOS.BuildTool`: deterministic package, signed manifest, verification; V-OS icon
+- ✅ End-to-end delivery test on real artifacts (redirected install): install, repair, update, rollback, automatic rollback, uninstall
+- ⏸ Real-installation test (Apps entry, Start menu) and hosted HTTPS feed: Windows Sandbox (H4) or the owner's go-ahead; GitHub release (H1)
+- ⬜ GitHub Actions CI and release workflow (needs H1)
 
 ## Phase 6 — Quality
 - 🔄 Unit and integration tests (128 passing) · live verification of every app with screenshots
@@ -55,4 +58,4 @@ _Last updated: 2026-11-22._
 - Native AOT and trimming (ADR-017).
 
 ## Next action
-Phase 5: the launcher (install, update with rollback, uninstall) and the reproducible release build.
+Phase 6: user documentation (guide, limitations, privacy, security, third-party notices), then the final release build with measurements.

@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VOS/VOS.csproj" />
+    <Project Path="src/VOS.Core/VOS.Core.csproj" />
+    <Project Path="src/VOS.Platform/VOS.Platform.csproj" />
+    <Project Path="src/VOS.UI/VOS.UI.csproj" />
+    <Project Path="src/VOS.Bootstrap/VOS.Bootstrap.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VOS.Tests/VOS.Tests.csproj" />
+  </Folder>
+  <Folder Name="/build/">
+    <Project Path="build/VOS.BuildTool/VOS.BuildTool.csproj" />
+  </Folder>
+</Solution>

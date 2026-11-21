@@ -12,6 +12,7 @@ No build has been released yet.
 - Assistant: works offline on this PC with V-OS commands. It can also use Claude (your own API key; consent first; actions as validated tools; another model answers if Claude declines) or a local Ollama server.
 - Fixed: the “note …” command opened Notes without the note text.
 - Removed: the Music “Visualizer” and “Crossfade” switches, which had no effect yet (planned after 1.0).
+- Installation: `V-Launcher.exe` installs V-OS for your account without administrator rights, verifies the signed release, and also updates, repairs, rolls back and uninstalls. Updates keep the previous version and return to it automatically if the new one does not start. The V-OS Launcher shows the installation, updates, recovery tools and an exportable diagnostics report with keys removed.
 
 **Known limitations so far:** the interface is English while dates and numbers follow the regional format; Music has no equalizer, visualizer or crossfade; Capture has no screen recording; Store needs winget; alarms and flows need the shell running; Ollama answers but cannot run actions.
 

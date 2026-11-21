@@ -8,10 +8,14 @@
     <RootNamespace>VOS</RootNamespace>
     <AssemblyName>VOS</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\icons\vos.ico</ApplicationIcon>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
+    <!-- Unpackaged publish needs MSIX tooling to generate and ship VOS.pri (compiled XAML and merged control resources).
+         Without it the published app crashes on the first control whose style lives there (found by the install test). -->
+    <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <SelfContained>true</SelfContained>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -29,6 +33,8 @@
     <PackageReference Include="Microsoft.Web.WebView2" />
     <PackageReference Include="QRCoder" />
     <PackageReference Include="Anthropic" />
+    <!-- Used only once a Claude conversation starts: JIT on first use instead of doubling its size with ReadyToRun. -->
+    <PublishReadyToRunExclude Include="Anthropic.dll" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />

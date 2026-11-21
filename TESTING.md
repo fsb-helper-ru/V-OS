@@ -36,6 +36,8 @@ Rules:
 | 2026-11-21 | **Live shell run** (Debug build, real desktop, `build/dev-shell.ps1`) | ✅ details below |
 | 2026-11-22 | Unit and integration tests (`tests/VOS.Tests`), including 25 assistant tests: action validation, Markdown, Ollama stream parsing, and the Claude conversation through the real SDK against a fake HTTP handler | ✅ 128 passed, 0 failed |
 | 2026-11-22 | **Live app verification** (Debug build, dev data root, screenshots of real windows) | ✅ details below |
+| 2026-11-22 | **Delivery end to end** (release build, real V-Launcher.exe and packages, install redirected with `VOS_INSTALL_ROOT`) | ✅ details below; 1 release-blocking bug found and fixed |
+| 2026-11-22 | Unit and integration tests, including install layout, release JSON and signature, and secret redaction | ✅ 133 passed, 0 failed |
 
 ### Live shell verification (Debug build, reference machine, 2026-11-21)
 How: `dev-shell.ps1 start | shot | geometry | send | stop` with an isolated data root, screenshots via the screen DC, UI Automation for element trees, `WindowFromPoint` for hit-testing, and the shell's `diag` IPC message for memory.
@@ -70,6 +72,22 @@ Test runs avoid side effects: screenshots go to a temp folder, clipboard writes 
 | Assistant, on this PC | `12 * 7`, `5 km in miles`, help text in Markdown; `weather in London` from Open-Meteo; `timer 10 min` ran through the shell's new `run` message and appeared in the V-Pill; `open notes` opened Notes in-process |
 | Assistant, Claude | consent screen and key screen appear and react to settings at once; with a deliberately invalid key the real API returned 401 and the reply showed “The Claude API key was not accepted”; changing provider mid-chat starts a new conversation (divider shown). A successful Claude answer needs the owner's own key and has not been run. |
 | Assistant, Ollama | with no server running: “Could not reach Ollama at http://localhost:11434” |
+
+### Delivery end to end (release build 1.0.0 / 1.0.1, 2026-11-22)
+The real artifacts of `build/build.ps1`, installed into a temp folder (`VOS_INSTALL_ROOT`, `VOS_DATA_ROOT`), so nothing was registered with Windows. Task-dialog buttons were pressed with `TDM_CLICK_BUTTON`.
+
+| Scenario | Result |
+|---|---|
+| Release build | ✅ V-Launcher.exe 11.2 MB; package 98 MB (474 files, 255 MB unpacked); manifest signed and verified with the embedded key |
+| Install from the files next to V-Launcher.exe | ✅ welcome dialog → progress (download/verify/unpack, cancel disabled while unpacking) → health check → `--launcher --setup` from the installed copy, detecting the test installation |
+| Published app opens every launcher page | ❌ → ✅ crashed (`0xc000027b`, stowed XAML exception) because `VOS.pri` was missing from the publish output; fixed with `EnableMsixTooling` and re-verified |
+| Repair (same version) from V-Launcher.exe | ✅ "Repair finished"; the previous files kept as the rollback copy |
+| Update 1.0.0 → 1.0.1 from the launcher (file feed) | ✅ check, download, hash check, staging, settings snapshot, hand-over to `--apply`, V-OS closed, swap, health check, launcher reopened with "Update installed" |
+| Roll back 1.0.1 → 1.0.0 | ✅ active version 1.0.0, rollback copy consumed, state updated |
+| Broken but correctly signed update (VOS.dll removed) | ✅ health check failed (exit 0x8000809A) → automatic rollback → "The update could not start … went back to version 1.0.0. Nothing was lost."; 1.0.0 passes its health check afterwards |
+| Uninstall, deleting data | ✅ data folder removed |
+| Uninstall, keeping data | ✅ data kept; install folder fully removed (the first run left V-Launcher.exe behind; fixed with a retrying cleanup script) |
+| Not covered yet | real registration with Windows (Apps entry, Start menu) and the HTTPS download path: they need a real installation and a hosted feed (Windows Sandbox or the owner's go-ahead; GitHub release) |
 
 ### Spike S1 transparency strategies (first run, before the fix was adopted)
 Margin pixels that must equal the background:

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    V-Launcher.exe (ADR-005): single-file download bootstrapper, updater and uninstaller. No UI framework: it uses the
+    Windows task dialog. Trimmed, compressed, self-contained, so it runs on a clean Windows without .NET.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>V-Launcher</AssemblyName>
+    <RootNamespace>VOS.Bootstrap</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\icons\vos.ico</ApplicationIcon>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>full</TrimMode>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <DebuggerSupport>false</DebuggerSupport>
+    <EventSourceSupport>false</EventSourceSupport>
+    <StackTraceSupport>false</StackTraceSupport>
+    <MetricsSupport>false</MetricsSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="VosUpdateFeed" Value="$(VosUpdateFeed)" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- One implementation of release verification and the install layout, shared with VOS.exe. -->
+    <Compile Include="..\VOS.Core\Updates\ReleaseManifest.cs" Link="Shared\ReleaseManifest.cs" />
+    <Compile Include="..\VOS.Core\Updates\ReleaseKey.cs" Link="Shared\ReleaseKey.cs" />
+    <Compile Include="..\VOS.Core\Setup\InstallLayout.cs" Link="Shared\InstallLayout.cs" />
+  </ItemGroup>
+</Project>

@@ -206,6 +206,16 @@ Original plan, kept for reference (the roles still apply):
   1. verifies and unpacks the payload into `app.staging\`;
   2. starts the WinUI installer (`VOS.Launcher.exe --setup`), which handles compatibility checks, components, progress, and first launch.
 - MSIX was not chosen: it needs a trusted signing certificate for sideloading and restricts shell-level integration.
+- **Implementation (2026-11-22):**
+  - **V-Launcher.exe.** A trimmed, compressed, self-contained single file of 11 MB. Its only UI is the Windows task dialog (Common Controls 6, no UI framework). It runs:
+    - install or repair: from a `vos-release.json` and package next to it, or from the feed URL baked in at build time (HTTPS only);
+    - `--apply` (a staged update), `--rollback` and `--uninstall`.
+    It compiles the same `ReleaseManifest.cs` and `InstallLayout.cs` as V-OS, so verification and the layout have one implementation.
+  - **Self-update of the bootstrapper.** The package carries a copy of V-Launcher.exe, which refreshes the one in the install root. A running copy is renamed to `.old` first, because Windows lets a running executable be renamed but not overwritten.
+  - **The WinUI side** (`VOS.exe --launcher`) registers the per-user Apps entry and the Start-menu shortcuts. It does this idempotently on every start, so the shown version follows updates and rollbacks. It also downloads and stages updates, then hands the file swap to V-Launcher.exe, which runs outside `app\`.
+  - **Uninstall** restores the desktop with `VOS.exe --recover` before deleting anything, offers to keep or delete user data, and removes itself through a short retrying cleanup script.
+  - **`VOS_INSTALL_ROOT`** redirects an installation for tests. A redirected installation registers nothing with Windows.
+  - **`EnableMsixTooling=true`** is required for unpackaged publish. Without it `VOS.pri` (compiled XAML and merged control resources) is missing from the output, and the published app crashes on the first control whose style lives there. The install test found this.
 
 ## ADR-006 — Updates, integrity and rollback
 **Status:** Accepted · 2026-11-21
@@ -214,6 +224,7 @@ Original plan, kept for reference (the roles still apply):
 - Packages are verified by SHA-256 before extraction.
 - After a swap, a health check runs (`--health-check`). On failure, `app.previous\` is restored automatically.
 - User data is never touched by updates. A settings snapshot is taken before every update.
+- **Release build (2026-11-22):** `build/build.ps1` produces the app (Release, ReadyToRun, self-contained), V-Launcher.exe, a deterministic package (ordinal entry order, commit timestamps) and the signed manifest. `VOS.BuildTool` signs with the key from `%USERPROFILE%\.vos-release` and verifies the result with the public key compiled into V-OS. `Anthropic.dll` is excluded from ReadyToRun: it is used only in Claude conversations, and ReadyToRun would double it to 25 MB.
 - Authenticode signing is added once a code-signing certificate is available (see INTEGRATIONS.md).
 
 ## ADR-007 — Browser engine: WebView2 (Evergreen)

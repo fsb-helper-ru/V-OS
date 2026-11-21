@@ -103,7 +103,11 @@ Update in the same change whenever relevant:
 ## Build and test
 ```powershell
 . .\build\dev-env.ps1
-dotnet build V-OS.slnx -c Debug
+dotnet build V-OS.slnx -c Debug        # everything; .\build\dev-build.ps1 builds VOS.exe and prints only issues
 dotnet test tests\VOS.Tests
+.\build\build.ps1                      # release: artifacts\release\<version>\ (V-Launcher.exe, package zip, signed vos-release.json)
 ```
-The release pipeline (`build/build.ps1`) is added in Phase 5. See ROADMAP.md.
+- `build.ps1` signs with `%USERPROFILE%\.vos-release\release-key.pem` (never in the repo). `-Version`, `-Channel`, `-Feed <url>` (baked into V-Launcher.exe), `-SkipTests`.
+- Install tests never touch the real installation: set `VOS_INSTALL_ROOT` (and `VOS_DATA_ROOT`) to temp folders. A redirected installation registers nothing with Windows.
+- Task dialogs of V-Launcher.exe can be driven by sending `TDM_CLICK_BUTTON` (0x466) with the button id to the `#32770` window: 100 Install, 101 Open, 102 Repair, 103 Uninstall, 2 Cancel, 8 Close.
+- `build\tools\make-icon.ps1` regenerates `assets\icons\vos.ico`.
