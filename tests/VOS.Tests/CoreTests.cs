@@ -433,6 +433,65 @@ public class TimerTests
     }
 }
 
+public class TimeDataTests
+{
+    [Fact]
+    public void Ics_parses_events_with_folding_escapes_time_zones_and_dates()
+    {
+        var ics = "BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nUID:abc@example\r\nSUMMARY:Team sync\\, weekly\r\n" +
+                  "DTSTART;TZID=Europe/Berlin:20261124T100000\r\nDTEND;TZID=Europe/Berlin:20261124T103000\r\nLOCATION:Room 4\r\n" +
+                  "DESCRIPTION:Line one\\nLine two that is long and\r\n  continues here\r\nRRULE:FREQ=WEEKLY;COUNT=3\r\nEND:VEVENT\r\n" +
+                  "BEGIN:VEVENT\r\nSUMMARY:Holiday\r\nDTSTART;VALUE=DATE:20261225\r\nEND:VEVENT\r\nEND:VCALENDAR";
+        var events = Ics.Parse(ics, "ics:test.ics");
+        Assert.Equal(2, events.Count);
+        var sync = events[0];
+        Assert.Equal("Team sync, weekly", sync.Title);
+        Assert.Equal("Room 4", sync.Location);
+        Assert.Equal("Line one\nLine two that is long and continues here", sync.Notes);
+        Assert.Equal(TimeSpan.FromMinutes(30), sync.End - sync.Start);
+        var berlin = TimeZoneInfo.FindSystemTimeZoneById("W. Europe Standard Time");
+        Assert.Equal(TimeZoneInfo.ConvertTime(new DateTime(2026, 11, 24, 10, 0, 0), berlin, TimeZoneInfo.Local), sync.Start);
+        Assert.True(events[1].AllDay);
+        Assert.Equal(new DateTime(2026, 12, 25), events[1].Start);
+        Assert.Equal(new DateTime(2026, 12, 26), events[1].End);
+        var occurrences = Recurrence.Expand(sync, new DateTime(2026, 11, 1), new DateTime(2027, 1, 1)).ToList();
+        Assert.Equal(3, occurrences.Count);
+        Assert.Equal(sync.Start.AddDays(14), occurrences[2].Start);
+    }
+
+    [Fact]
+    public void Weekly_recurrence_by_day_until()
+    {
+        var e = new CalendarEvent { Title = "Gym", Start = new DateTime(2026, 11, 2, 18, 0, 0), End = new DateTime(2026, 11, 2, 19, 0, 0), RRule = "FREQ=WEEKLY;BYDAY=MO,WE,FR;UNTIL=20261115T000000Z" };
+        var list = Recurrence.Expand(e, new DateTime(2026, 11, 1), new DateTime(2026, 12, 1)).ToList();
+        Assert.Equal(6, list.Count); // 2, 4, 6, 9, 11, 13 November
+        Assert.All(list, x => Assert.Contains(x.Start.DayOfWeek, new[] { DayOfWeek.Monday, DayOfWeek.Wednesday, DayOfWeek.Friday }));
+        Assert.Equal(TimeSpan.FromHours(1), list[3].End - list[3].Start);
+    }
+
+    [Fact]
+    public void Calendar_store_round_trip_and_range()
+    {
+        var store = new CalendarStore(TestEnv.NewFile("cal.db"));
+        store.Save(new CalendarEvent { Title = "Dentist", Start = new DateTime(2026, 11, 25, 9, 0, 0), End = new DateTime(2026, 11, 25, 9, 45, 0) });
+        store.Save(new CalendarEvent { Title = "Standup", Start = new DateTime(2026, 11, 2, 9, 0, 0), End = new DateTime(2026, 11, 2, 9, 15, 0), RRule = "FREQ=DAILY;INTERVAL=1" });
+        var day = store.Range(new DateTime(2026, 11, 25), new DateTime(2026, 11, 26));
+        Assert.Equal(["Standup", "Dentist"], day.Select(e => e.Title).ToArray());
+    }
+
+    [Fact]
+    public void Alarm_next_occurrence()
+    {
+        var now = new DateTime(2026, 11, 21, 8, 0, 0); // Saturday
+        Assert.Equal(new DateTime(2026, 11, 23, 7, 30, 0), new Alarm { Hour = 7, Minute = 30, Days = 0b0111110 }.Next(now)); // next weekday: Monday
+        Assert.Equal(new DateTime(2026, 11, 21, 9, 0, 0), new Alarm { Hour = 9 }.Next(now));
+        Assert.Equal(new DateTime(2026, 11, 22, 6, 0, 0), new Alarm { Hour = 6 }.Next(now));
+        Assert.Null(new Alarm { Enabled = false }.Next(now));
+        Assert.Equal(now.AddMinutes(9), new Alarm { Hour = 6, SnoozedUntil = now.AddMinutes(9) }.Next(now));
+        Assert.Equal("Weekdays", new Alarm { Days = 0b0111110 }.DaysText);
+    }
+}
+
 public class PlatformNeutralServiceTests
 {
     [Fact]

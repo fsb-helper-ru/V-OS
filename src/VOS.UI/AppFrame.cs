@@ -98,22 +98,39 @@ public class AppFrame
         set { _title.Text = value; Window.Title = value; }
     }
 
+    private Brush? _customBackground;
+
+    /// <summary>
+    /// Full-bleed custom background (behind the title bar too) with light window chrome, for apps whose content
+    /// sets its own mood (Weather, Music now playing). Pass null to return to Mica.
+    /// </summary>
+    public void UseCustomBackground(Brush? background)
+    {
+        _customBackground = background;
+        if (background != null) { ThemeService.Current.Untrack(Root); Root.RequestedTheme = ElementTheme.Dark; _title.Foreground = new SolidColorBrush(global::Windows.UI.Color.FromArgb(0xC8, 255, 255, 255)); }
+        else { ThemeService.Current.Track(Root); _title.Foreground = ThemeService.Current.Brush("Vos.TextSecondary"); }
+        ApplyLook();
+    }
+
     private void ApplyLook()
     {
-        bool mica = VisualQuality.Current.Mica;
+        bool custom = _customBackground != null;
+        bool mica = VisualQuality.Current.Mica && !custom;
         if (mica && Window.SystemBackdrop is not MicaBackdrop) Window.SystemBackdrop = new MicaBackdrop { Kind = MicaKind.Base };
         if (!mica) Window.SystemBackdrop = null;
-        Root.Background = mica ? new SolidColorBrush(Colors.Transparent) : ThemeService.Current.Brush("Vos.Base");
+        Root.Background = custom ? _customBackground : mica ? new SolidColorBrush(Colors.Transparent) : ThemeService.Current.Brush("Vos.Base");
         var p = ThemeService.Current.Palette;
+        bool darkChrome = custom || p.IsDark;
+        var fg = custom ? global::Windows.UI.Color.FromArgb(255, 255, 255, 255) : p.TextPrimary;
         var tb = AppWindow.TitleBar;
         tb.ButtonBackgroundColor = Colors.Transparent;
         tb.ButtonInactiveBackgroundColor = Colors.Transparent;
-        tb.ButtonForegroundColor = p.TextPrimary;
-        tb.ButtonInactiveForegroundColor = p.TextTertiary;
-        tb.ButtonHoverBackgroundColor = p.IsDark ? global::Windows.UI.Color.FromArgb(0x1A, 255, 255, 255) : global::Windows.UI.Color.FromArgb(0x10, 0, 0, 0);
-        tb.ButtonHoverForegroundColor = p.TextPrimary;
-        tb.ButtonPressedBackgroundColor = p.IsDark ? global::Windows.UI.Color.FromArgb(0x10, 255, 255, 255) : global::Windows.UI.Color.FromArgb(0x18, 0, 0, 0);
-        int dark = p.IsDark ? 1 : 0;
+        tb.ButtonForegroundColor = fg;
+        tb.ButtonInactiveForegroundColor = custom ? global::Windows.UI.Color.FromArgb(0x99, 255, 255, 255) : p.TextTertiary;
+        tb.ButtonHoverBackgroundColor = darkChrome ? global::Windows.UI.Color.FromArgb(0x1A, 255, 255, 255) : global::Windows.UI.Color.FromArgb(0x10, 0, 0, 0);
+        tb.ButtonHoverForegroundColor = fg;
+        tb.ButtonPressedBackgroundColor = darkChrome ? global::Windows.UI.Color.FromArgb(0x10, 255, 255, 255) : global::Windows.UI.Color.FromArgb(0x18, 0, 0, 0);
+        int dark = darkChrome ? 1 : 0;
         Win32.DwmSetWindowAttribute(Hwnd, Win32.DWMWA_USE_IMMERSIVE_DARK_MODE, ref dark, 4);
     }
 

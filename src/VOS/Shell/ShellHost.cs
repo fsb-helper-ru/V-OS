@@ -32,6 +32,7 @@ public sealed class ShellHost
     public AudioService Audio { get; private set; } = null!;
     public SystemStatusService Status { get; } = new();
     public TimerStore Timers { get; } = new();
+    public AlarmWatcher Alarms { get; private set; } = null!;
     public NotificationCenter Notifications { get; } = new();
     public ActivityManager Activities { get; } = new();
     public QualityGovernor Quality { get; } = new();
@@ -95,6 +96,8 @@ public sealed class ShellHost
         Tracker.ForegroundChanged += _ => UiThread.Post(() => { Quality.CheckFullscreen(); Bar?.OnForegroundChanged(); Dock?.OnForegroundChanged(); });
         _ = Media.StartAsync();
         Timers.Watch();
+        Alarms = new AlarmWatcher(this);
+        Alarms.Start();
         Weather.Start();
         Notifications.FocusActive = () => FocusOn;
         Notifications.Load(Settings.Current.Notifications.HistoryDays);

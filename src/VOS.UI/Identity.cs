@@ -117,6 +117,23 @@ public static class Images
         }, TaskScheduler.Default);
     }
 
+    /// <summary>
+    /// Same as <see cref="LoadIcon"/> for recycled rows in virtualized lists: the image remembers what it was asked
+    /// to show, and a late result for a row that has since been re-bound to another item is dropped.
+    /// </summary>
+    public static void LoadIconFor(Image target, string? parsingName, int pixels)
+    {
+        target.Tag = parsingName;
+        target.Source = null;
+        if (string.IsNullOrEmpty(parsingName)) return;
+        if (IconService.TryGetCached(parsingName, pixels) is { } hit) { target.Source = ToBitmap(hit); return; }
+        _ = IconService.GetAsync(parsingName, pixels).ContinueWith(t =>
+        {
+            if (t.Status == TaskStatus.RanToCompletion && t.Result is { } icon)
+                UiThread.Post(() => { if (Equals(target.Tag, parsingName)) target.Source = ToBitmap(icon); });
+        }, TaskScheduler.Default);
+    }
+
     public static async Task<BitmapImage?> FromBytesAsync(byte[]? bytes, int decodeWidth = 0)
     {
         if (bytes == null || bytes.Length == 0) return null;

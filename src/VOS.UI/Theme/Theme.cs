@@ -287,6 +287,10 @@ public sealed class ThemeService
         return null;
     }
 
+    /// <summary>Stops syncing a root's RequestedTheme (for surfaces that keep their own, e.g. full-bleed dark content).</summary>
+    public void Untrack(FrameworkElement root) =>
+        _roots.RemoveAll(r => !r.TryGetTarget(out var fe) || ReferenceEquals(fe, root));
+
     /// <summary>Keeps a window root's RequestedTheme in sync (for built-in control templates).</summary>
     public void Track(FrameworkElement root)
     {

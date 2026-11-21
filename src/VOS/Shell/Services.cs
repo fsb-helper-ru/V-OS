@@ -8,6 +8,7 @@ using VOS.Core.Notifications;
 using VOS.Core.Perf;
 using VOS.Core.Search;
 using VOS.Core.Settings;
+using VOS.Core.Timers;
 using VOS.Core.Weather;
 using VOS.Platform.Shell;
 using VOS.Platform.Sys;
@@ -16,6 +17,68 @@ using VOS.UI;
 using VOS.UI.Quality;
 
 namespace VOS.Shell;
+
+/// <summary>
+/// Rings alarms set in the Time app (data/alarms.json), whether or not the app is open. The next ring is scheduled
+/// precisely but re-checked at least every 30 seconds, so sleep, clock changes and edits from the app are handled.
+/// One-time alarms switch themselves off after ringing.
+/// </summary>
+public sealed class AlarmWatcher(ShellHost host)
+{
+    private readonly SharedJsonList<Alarm> _alarms = new("alarms.json");
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _timer;
+    private DateTime _lastCheck = DateTime.Now.AddMinutes(-1);
+
+    public void Start()
+    {
+        _alarms.Watch();
+        _alarms.Changed += () => UiThread.Post(Schedule);
+        Schedule();
+    }
+
+    public void Snooze(string id, TimeSpan by) => _alarms.Mutate(list => { if (list.FirstOrDefault(a => a.Id == id) is { } a) { a.SnoozedUntil = DateTime.Now + by; a.Enabled = true; } });
+
+    private void Schedule()
+    {
+        _timer?.Stop();
+        var now = DateTime.Now;
+        var next = _alarms.List().Select(a => a.Next(now)).Where(t => t != null).Min();
+        var wait = next is { } n ? n - now : TimeSpan.FromSeconds(30);
+        if (wait > TimeSpan.FromSeconds(30)) wait = TimeSpan.FromSeconds(30);
+        if (wait < TimeSpan.FromMilliseconds(200)) wait = TimeSpan.FromMilliseconds(200);
+        _timer = UiThread.Timer(wait, Check, repeating: false);
+        _timer.Start();
+    }
+
+    private void Check()
+    {
+        var now = DateTime.Now;
+        var since = _lastCheck;
+        _lastCheck = now;
+        var due = new List<Alarm>();
+        _alarms.Mutate(list =>
+        {
+            foreach (var a in list)
+            {
+                // The occurrence that came due since the previous check (rings once even if the timer fired late).
+                if (a.Next(since) is not { } at || at > now) continue;
+                if (a.LastFired is { } f && f >= at) continue;
+                a.LastFired = now;
+                a.SnoozedUntil = null;
+                if (a.Days == 0) a.Enabled = false;
+                due.Add(a);
+            }
+        });
+        foreach (var a in due)
+            host.Notifications.Post(new VosNotification
+            {
+                AppId = "time", AppName = "Time", Title = a.Label.Length > 0 ? a.Label : "Alarm",
+                Body = $"{a.Hour:00}:{a.Minute:00}", Glyph = Glyphs.Clock, Priority = NotificationPriority.Critical, Command = "app:time|section=alarms",
+                Actions = [new NotificationAction { Label = "Snooze 9 min", Command = "alarm:snooze:" + a.Id }, new NotificationAction { Label = "Open", Command = "app:time|section=alarms" }],
+            });
+        Schedule();
+    }
+}
 
 /// <summary>Unified notification center: history in SQLite, per-app mute, Focus rules, banners through the capsule.</summary>
 public sealed class NotificationCenter
@@ -219,6 +282,10 @@ public sealed class CommandRunner(ShellHost host)
             case "theme": SetTheme(arg); return true;
             case "clipboard":
                 if (arg == "clear") host.ClipboardHistory?.ClearUnpinned();
+                return true;
+            case "alarm":
+                var a = arg.Split(':', 2);
+                if (a.Length == 2 && a[0] == "snooze") host.Alarms.Snooze(a[1], TimeSpan.FromMinutes(9));
                 return true;
             case "focus": host.SetFocus(arg switch { "on" => true, "off" => false, _ => !host.FocusOn }); return true;
             case "timer":

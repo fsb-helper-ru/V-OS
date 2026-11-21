@@ -49,6 +49,10 @@ public static class IconService
         return done.Task;
     }
 
+    /// <summary>Memory-cache lookup only (never blocks, never extracts).</summary>
+    public static PixelImage? TryGetCached(string parsingName, int size, bool thumbnail = false) =>
+        s_memory.TryGetValue(Key(parsingName, size, thumbnail), out var hit) ? hit : null;
+
     /// <summary>Blocking variant for background threads. Never call it on a UI thread.</summary>
     public static PixelImage? Get(string parsingName, int size, bool thumbnail = false) =>
         Thread.CurrentThread == s_worker ? Load(parsingName, size, thumbnail) : GetAsync(parsingName, size, thumbnail).GetAwaiter().GetResult();

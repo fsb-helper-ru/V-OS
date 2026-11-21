@@ -157,5 +157,9 @@ public static class Modules
     public static void RegisterAll()
     {
         AppHost.Register("settings", () => new Settings.SettingsApp());
+        AppHost.Register("weather", () => new Weather.WeatherApp());
+        AppHost.Register("monitor", () => new Monitor.MonitorApp());
+        AppHost.Register("notes", () => new Notes.NotesApp());
+        AppHost.Register("time", () => new Time.TimeApp());
     }
 }
