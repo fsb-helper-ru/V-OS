@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <!-- V-Platform: Win32, COM and WinRT integrations. All OS access goes through here. -->
+  <!-- V-Platform: Win32, COM and WinRT integrations. All OS access goes through here. No UI framework. -->
   <PropertyGroup>
     <TargetFramework>$(VosWindowsTfm)</TargetFramework>
-    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
-    <UseWPF>true</UseWPF>
+    <SupportedOSPlatformVersion>$(VosMinWindows)</SupportedOSPlatformVersion>
     <RootNamespace>VOS.Platform</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\VOS.Core\VOS.Core.csproj" />
-    <PackageReference Include="NAudio" />
     <PackageReference Include="System.Management" />
     <PackageReference Include="System.Data.OleDb" />
   </ItemGroup>
