@@ -48,13 +48,16 @@ function Find-Element($w, [string]$name) {
 switch ($Action) {
     'wait' { $null = Find-Window $Window; "found" }
     'invoke' {
-        $e = Find-Element (Find-Window $Window) $Name
-        $p = $null
-        if ($e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke() }
-        elseif ($e.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$p)) { $p.Toggle() }
-        elseif ($e.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$p)) { $p.Select() }
-        else { throw "Element '$Name' has no invoke, toggle or selection pattern" }
-        "invoked $Name"
+        $w = Find-Window $Window
+        $all = $w.FindAll([System.Windows.Automation.TreeScope]::Descendants, (New-Object System.Windows.Automation.PropertyCondition($nameProp, $Name)))
+        if ($all.Count -eq 0) { throw "Element '$Name' not found in '$Window'" }
+        foreach ($e in $all) {
+            $p = $null
+            if ($e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); "invoked $Name"; return }
+            if ($e.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$p)) { $p.Toggle(); "toggled $Name"; return }
+            if ($e.TryGetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern, [ref]$p)) { $p.Select(); "selected $Name"; return }
+        }
+        throw "Element '$Name' has no invoke, toggle or selection pattern"
     }
     'type' {
         $e = Find-Element (Find-Window $Window) $Name

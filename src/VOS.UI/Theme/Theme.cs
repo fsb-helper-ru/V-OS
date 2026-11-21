@@ -271,6 +271,9 @@ public sealed class ThemeService
                 Tint(td, "SystemControlHighlightAccentBrush", accent);
                 Tint(td, "SystemControlForegroundAccentBrush", text);
                 Tint(td, "SystemControlBackgroundAccentBrush", accent);
+                // The focused text-box underline is a gradient whose first stop is the accent colour.
+                if (Find(td, "TextControlElevationBorderFocusedBrush", 0) is LinearGradientBrush focus && focus.GradientStops.Count > 0)
+                    focus.GradientStops[0].Color = accent;
             }
     }
 

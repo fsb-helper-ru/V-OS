@@ -60,7 +60,7 @@ public static class AppHost
         if (args.Length == 0) { Application.Current.Exit(); return; }
         var id = args[0].ToLowerInvariant();
         var rest = args.Skip(1).Where(a => a != "--isolated").ToArray();
-        s_isolatedBrowser = id == "browser";
+        s_isolatedBrowser = id is "browser" or "browser-private";
         var pipe = s_isolatedBrowser ? IpcNames.Isolated("browser") : IpcNames.Apps;
         if (IpcClient.IsListening(pipe))
         {
@@ -97,11 +97,11 @@ public static class AppHost
     public static void Open(string id, string[] args)
     {
         id = id.ToLowerInvariant();
-        if (id == "browser" && !s_isolatedBrowser)
+        if (id is "browser" or "browser-private" && !s_isolatedBrowser)
         {
             // Hand browser requests to the isolated browser process.
             var psi = new ProcessStartInfo(Path.Combine(AppContext.BaseDirectory, "VOS.exe")) { UseShellExecute = false };
-            psi.ArgumentList.Add("--app"); psi.ArgumentList.Add("browser");
+            psi.ArgumentList.Add("--app"); psi.ArgumentList.Add(id);
             foreach (var a in args) psi.ArgumentList.Add(a);
             Process.Start(psi);
             return;
@@ -161,5 +161,9 @@ public static class Modules
         AppHost.Register("monitor", () => new Monitor.MonitorApp());
         AppHost.Register("notes", () => new Notes.NotesApp());
         AppHost.Register("time", () => new Time.TimeApp());
+        AppHost.Register("files", () => new Files.FilesApp());
+        AppHost.Register("music", () => new Music.MusicApp());
+        AppHost.Register("browser", () => new Browser.BrowserApp());
+        AppHost.Register("browser-private", () => new Browser.BrowserApp(isPrivate: true));
     }
 }

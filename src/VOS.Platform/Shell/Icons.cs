@@ -22,7 +22,7 @@ public sealed record PixelImage(int Width, int Height, byte[] Bgra)
 public static class IconService
 {
     private const int E_PENDING = unchecked((int)0x8000000A);
-    private sealed record Request(string ParsingName, int Size, bool Thumbnail, TaskCompletionSource<PixelImage?> Done);
+    private sealed record Request(string ParsingName, int Size, bool Thumbnail, bool Only, TaskCompletionSource<PixelImage?> Done);
 
     private static readonly ConcurrentDictionary<string, PixelImage> s_memory = new(StringComparer.OrdinalIgnoreCase);
     private static readonly BlockingCollection<Request> s_queue = [];
@@ -34,18 +34,23 @@ public static class IconService
     [DllImport("gdi32.dll")] private static extern int GetObjectW(IntPtr h, int size, out BITMAP bm);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr o);
 
-    private static string Key(string parsingName, int size, bool thumbnail) => $"{parsingName}|{size}|{thumbnail}";
+    private static string Key(string parsingName, int size, bool thumbnail, bool only = false) => $"{parsingName}|{size}|{thumbnail}{(only ? "|only" : "")}";
 
     /// <summary>
     /// Icon for a parsing name (file path, "shell:AppsFolder\..." item, folder). Completes synchronously from the memory
     /// cache, otherwise on the icon thread. Never throws; completes with null when no icon is available.
     /// </summary>
-    public static Task<PixelImage?> GetAsync(string parsingName, int size, bool thumbnail = false)
+    public static Task<PixelImage?> GetAsync(string parsingName, int size, bool thumbnail = false) => Enqueue(parsingName, size, thumbnail, false);
+
+    /// <summary>A real thumbnail (album art, photo, video frame) or null: never falls back to the file-type icon.</summary>
+    public static Task<PixelImage?> GetThumbnailOnlyAsync(string parsingName, int size) => Enqueue(parsingName, size, true, true);
+
+    private static Task<PixelImage?> Enqueue(string parsingName, int size, bool thumbnail, bool only)
     {
-        if (s_memory.TryGetValue(Key(parsingName, size, thumbnail), out var hit)) return Task.FromResult<PixelImage?>(hit);
+        if (s_memory.TryGetValue(Key(parsingName, size, thumbnail, only), out var hit)) return Task.FromResult<PixelImage?>(hit);
         EnsureWorker();
         var done = new TaskCompletionSource<PixelImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        s_queue.Add(new Request(parsingName, size, thumbnail, done));
+        s_queue.Add(new Request(parsingName, size, thumbnail, only, done));
         return done.Task;
     }
 
@@ -75,14 +80,14 @@ public static class IconService
         // Blocking waits on an STA thread pump COM messages, so shell callbacks into this apartment still run.
         foreach (var r in s_queue.GetConsumingEnumerable())
         {
-            try { r.Done.TrySetResult(Load(r.ParsingName, r.Size, r.Thumbnail)); }
+            try { r.Done.TrySetResult(Load(r.ParsingName, r.Size, r.Thumbnail, r.Only)); }
             catch (Exception ex) { Log.Warn("Icon request failed", ex); r.Done.TrySetResult(null); }
         }
     }
 
-    private static PixelImage? Load(string parsingName, int size, bool thumbnail)
+    private static PixelImage? Load(string parsingName, int size, bool thumbnail, bool only = false)
     {
-        var key = Key(parsingName, size, thumbnail);
+        var key = Key(parsingName, size, thumbnail, only);
         if (s_memory.TryGetValue(key, out var cached)) return cached;
         // v2: pixels are premultiplied before caching (v1 cached straight alpha as if it were premultiplied).
         var disk = Path.Combine(CacheDir, Hash("v2|" + key) + ".png");
@@ -93,7 +98,7 @@ public static class IconService
                 img = PngCodec.Decode(File.ReadAllBytes(disk));
         }
         catch { img = null; }
-        img ??= Extract(parsingName, size, thumbnail);
+        img ??= Extract(parsingName, size, thumbnail, only);
         if (img == null) return null; // never remember a failure: the next request retries
         if (!thumbnail) { try { File.WriteAllBytes(disk, img.ToPng()); } catch { } }
         if (s_memory.Count > 800) s_memory.Clear();
@@ -102,17 +107,17 @@ public static class IconService
     }
 
     /// <summary>Extracts directly (no cache), retrying while the shell reports the image as pending.</summary>
-    public static PixelImage? Extract(string parsingName, int size, bool thumbnail)
+    public static PixelImage? Extract(string parsingName, int size, bool thumbnail, bool only = false)
     {
         for (int attempt = 0; ; attempt++)
         {
-            var img = ExtractOnce(parsingName, size, thumbnail, out int hr);
+            var img = ExtractOnce(parsingName, size, thumbnail, only, out int hr);
             if (img != null || hr != E_PENDING || attempt == 4) return img;
             Thread.Sleep(30 << attempt); // 30, 60, 120, 240 ms
         }
     }
 
-    private static PixelImage? ExtractOnce(string parsingName, int size, bool thumbnail, out int hr)
+    private static PixelImage? ExtractOnce(string parsingName, int size, bool thumbnail, bool only, out int hr)
     {
         hr = 0;
         IShellItem? item = null;
@@ -121,11 +126,11 @@ public static class IconService
             var iid = ShellNative.IID_IShellItem;
             ShellNative.SHCreateItemFromParsingName(parsingName, IntPtr.Zero, ref iid, out item);
             if (item is not IShellItemImageFactory factory) return null;
-            var flags = thumbnail ? SIIGBF.BIGGERSIZEOK : SIIGBF.ICONONLY | SIIGBF.BIGGERSIZEOK;
+            var flags = only ? SIIGBF.THUMBNAILONLY | SIIGBF.BIGGERSIZEOK : thumbnail ? SIIGBF.BIGGERSIZEOK : SIIGBF.ICONONLY | SIIGBF.BIGGERSIZEOK;
             hr = factory.GetImage(new SIZE(size, size), flags, out var hbm);
             if (hr != 0 || hbm == IntPtr.Zero)
             {
-                if (hr != E_PENDING) Log.Info("Icon extraction failed", new { parsingName, size, hr = $"0x{hr:X8}" });
+                if (hr != E_PENDING && !only) Log.Info("Icon extraction failed", new { parsingName, size, hr = $"0x{hr:X8}" });
                 return null;
             }
             try
