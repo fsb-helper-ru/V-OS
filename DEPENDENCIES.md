@@ -5,7 +5,7 @@ Each dependency has to justify its place. Policy:
 - Every package below states why it is here.
 - New packages are justified in this file. Ask the owner first when a package is large (over 20 MB), has a non-permissive license, or brings an external service or account.
 
-_Last updated: 2026-11-21 (initial audit)._
+_Last updated: 2026-11-22 (Anthropic SDK and QRCoder added)._
 
 ## 1. Development machine (audited 2026-11-21)
 | Item | State | Notes |
@@ -48,12 +48,25 @@ _Last updated: 2026-11-21 (initial audit)._
 | Microsoft.Data.Sqlite | 10.0.15 | MIT | Core | structured local storage (ADR-009) |
 | System.Management | 10.0.15 | MIT | Platform (Monitor, Settings only) | WMI: panel brightness, battery details, thermal zones where exposed |
 | System.Data.OleDb | 10.0.15 | MIT | Platform | Windows Search index queries (file search) |
-| QRCoder | 1.9.0 | MIT | Apps (Connect) | pairing QR codes |
+| QRCoder | 1.9.0 | MIT | Apps (Connect) | pairing QR codes (pure managed, ~0.4 MB, no native code) |
+| Anthropic (official C# SDK) | 13.12.0 | Apache-2.0 | Apps (Assistant), Tests | Claude provider: streaming, typed tool use, refusal fallbacks, thinking-block binding. See the facts below. |
 | xunit / xunit.runner.visualstudio / Microsoft.NET.Test.Sdk | 2.9.3 / 3.1.5 / 18.12.0 | Apache-2.0 / MIT | Tests | unit and integration tests |
 | FlaUI.UIA3 | 5.0.0 | MIT | Tests | UI Automation tests of WinUI windows |
 | ~~NAudio~~ | — | — | — | **Removed** (ADR-008): replaced by WinRT AudioGraph and source-generated WASAPI interop |
 
 Not AOT-compatible: `System.Management`, `System.Data.OleDb`. They are confined to modules that will not be AOT-compiled, or are replaced later.
+
+### Anthropic 13.12.0 — HIGHLY RECOMMENDED (added 2026-11-22)
+1. Purpose: the Claude provider of the Assistant app. Used only when the user picks Claude, gives consent and enters their own key.
+2. It is Anthropic's official SDK. Hand-written HTTP would have to re-implement streaming aggregation, typed tool blocks, refusal fallbacks and thinking-block echoing, and keep up with API changes.
+3. License: Apache-2.0 (permissive, compatible with distribution).
+4. Size: `Anthropic.dll` is 11.4 MB, under the 20 MB ask-first threshold. The 15 MB XML documentation file is not shipped (the release build excludes it).
+5. Transitive packages: `System.Net.ServerSentEvents`, `Microsoft.Extensions.AI.Abstractions`, `System.Text.Json` (all Microsoft, MIT). No native code.
+6. Loaded lazily: the DLL is touched only when a Claude conversation starts, so other apps and the shell pay nothing for it.
+7. Network: talks only to `api.anthropic.com` over HTTPS, with the user's key (DPAPI-encrypted at rest). No telemetry is sent by V-OS (ADR-014).
+8. Features used: beta Messages streaming, client tools with eager input streaming, `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`), and `thinking.block_binding.prefix_mismatch_behavior: "drop_block"` (beta `thinking-binding-controls-2026-08-01`). ADR-018 has the rationale.
+9. Tested without network or cost: `ClaudeChatTests` drives the real SDK against a fake HTTP handler (request shape, tool loop, refusal, length limit, fallback boundary, errors, incremental streaming).
+10. Removal path: the Claude provider is one file (`ClaudeChat.cs`). Without it the Assistant still works on this PC and with Ollama.
 
 ## 4. External services (runtime, all optional, consent-gated where personal data is involved)
 | Service | Purpose | Data sent | Consent |
@@ -61,7 +74,8 @@ Not AOT-compatible: `System.Management`, `System.Data.OleDb`. They are confined 
 | Open-Meteo (forecast, geocoding, air quality) | weather | coordinates of saved locations | weather can be turned off. Commercial use needs a paid plan (ADR-011). |
 | GitHub Releases (default update feed) | updates | none beyond the HTTP request | the update check can be turned off |
 | Spotify Web API | music provider | OAuth (PKCE) with the user's own client ID | explicit sign-in |
-| Claude API / local Ollama | assistant (optional) | only what the user sends | explicit opt-in per provider |
+| Claude API (api.anthropic.com) | assistant (optional) | what the user types, plus the results of actions the assistant runs for them (for example a weather lookup) | consent screen before the first message; own API key; Settings › Privacy |
+| Ollama (user-run server) | assistant (optional) | what the user types | none on this PC (loopback); consent when the server is on another machine |
 | MyMemory / DeepL / LibreTranslate | translation (optional) | the text being translated | explicit opt-in |
 | winget sources | V-Store | search terms, package IDs | user-initiated |
 

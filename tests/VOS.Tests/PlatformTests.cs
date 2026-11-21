@@ -102,6 +102,38 @@ public class PlatformTests
     }
 
     [Fact]
+    public async Task Connect_server_serves_shared_files_and_receives_uploads_with_token_only()
+    {
+        // Loopback only: no firewall prompt, same code paths as the LAN listener.
+        var inbox = Path.Combine(Path.GetTempPath(), "vos-test-inbox-" + Guid.NewGuid().ToString("N")[..6]);
+        var shared = Path.Combine(Path.GetTempPath(), "vos-test-shared-" + Guid.NewGuid().ToString("N")[..6] + ".txt");
+        await File.WriteAllTextAsync(shared, "hello from the PC");
+        using var server = new VOS.Platform.Net.ShareServer(System.Net.IPAddress.Loopback, inbox);
+        server.Shared.Add(shared);
+        string? received = null;
+        server.Received += p => received = p;
+        using var http = new HttpClient();
+
+        var page = await http.GetStringAsync(server.Url);
+        Assert.Contains(Path.GetFileName(shared), page);
+        Assert.Equal("hello from the PC", await http.GetStringAsync(server.Url + "f/0"));
+        var wrongToken = await http.GetAsync($"http://127.0.0.1:{server.Port}/not-the-token/");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, wrongToken.StatusCode);
+        var outOfRange = await http.GetAsync(server.Url + "f/5");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, outOfRange.StatusCode);
+
+        var payload = new byte[300_000];
+        new Random(7).NextBytes(payload);
+        using var form = new MultipartFormDataContent { { new ByteArrayContent(payload), "f", "../../evil photo.jpg" } };
+        var upload = await http.PostAsync(server.Url + "upload", form);
+        Assert.True(upload.IsSuccessStatusCode);
+        Assert.NotNull(received);
+        Assert.Equal(inbox, Path.GetDirectoryName(received)); // path traversal stripped
+        Assert.Equal("evil photo.jpg", Path.GetFileName(received));
+        Assert.Equal(payload, await File.ReadAllBytesAsync(received!));
+    }
+
+    [Fact]
     public void Hardware_probe_describes_this_machine()
     {
         var h = HardwareProbe.Probe();

@@ -151,6 +151,14 @@ public static class AppHost
     public static void UpdateActivity(LiveActivity a) => _ = IpcClient.SendAsync(IpcNames.Shell, IpcMessage.Create(ShellMessages.ActivityUpdate, a));
     public static void EndActivity(string id) => _ = IpcClient.SendAsync(IpcNames.Shell, IpcMessage.Create(ShellMessages.ActivityEnd, id));
     public static void ShellCommand(string command) => _ = IpcClient.SendAsync(IpcNames.Shell, IpcMessage.Create(ShellMessages.Command, command));
+
+    /// <summary>Runs a shell command and waits for its outcome: true when it ran, false when it did not (nothing matched,
+    /// or the user declined a confirmation), null when the shell is not running or did not answer in time.</summary>
+    public static async Task<bool?> RunInShellAsync(string command, int timeoutMs = 10_000)
+    {
+        var reply = await IpcClient.SendAsync(IpcNames.Shell, IpcMessage.Create(ShellMessages.Run, command), expectReply: true, timeoutMs);
+        return reply?.Type switch { "ok" => true, "failed" => false, _ => null };
+    }
 }
 
 /// <summary>Module registry: an explicit list (no reflection), so it stays trim- and AOT-safe (ADR-017).</summary>
@@ -169,6 +177,9 @@ public static class Modules
         AppHost.Register("store", () => new Store.StoreApp());
         AppHost.Register("gaming", () => new Gaming.GamingApp());
         AppHost.Register("translate", () => new Translate.TranslateApp());
+        AppHost.Register("connect", () => new Connect.ConnectApp());
+        AppHost.Register("flow", () => new Flow.FlowApp());
+        AppHost.Register("assistant", () => new Assistant.AssistantApp());
         AppHost.Register("browser", () => new Browser.BrowserApp());
         AppHost.Register("browser-private", () => new Browser.BrowserApp(isPrivate: true));
     }

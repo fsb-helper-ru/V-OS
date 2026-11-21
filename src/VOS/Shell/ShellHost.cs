@@ -33,6 +33,7 @@ public sealed class ShellHost
     public SystemStatusService Status { get; } = new();
     public TimerStore Timers { get; } = new();
     public AlarmWatcher Alarms { get; private set; } = null!;
+    public FlowEngine Flows { get; private set; } = null!;
     public NotificationCenter Notifications { get; } = new();
     public ActivityManager Activities { get; } = new();
     public QualityGovernor Quality { get; } = new();
@@ -118,6 +119,8 @@ public sealed class ShellHost
         RegisterHotkeys();
         StartIpc();
         ApplyMode(Settings.Current.Shell.Mode);
+        Flows = new FlowEngine(this);
+        Flows.Start();
         Log.Info("Shell ready", new { ms = sw.ElapsedMilliseconds, quality = VisualQuality.Current.Profile.ToString() });
         // Idle-time warm-up: the panels opened most often are built and rendered once, invisibly.
         _warmup = UiThread.Timer(TimeSpan.FromSeconds(2), () => Panels.Prewarm(PanelKind.Command, PanelKind.Control), repeating: false);
@@ -231,6 +234,15 @@ public sealed class ShellHost
                     if (cmd == "show") UiThread.Post(() => Panels.Show(PanelKind.Command));
                     else UiThread.Post(() => _ = Commands.RunAsync(cmd, Panels.AnyXamlRoot));
                     return null;
+                case ShellMessages.Run:
+                    var runCommand = m.Read<string>() ?? "";
+                    var ran = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    UiThread.Post(async () =>
+                    {
+                        try { ran.TrySetResult(await Commands.RunAsync(runCommand, Panels.AnyXamlRoot)); }
+                        catch (Exception ex) { Log.Warn("Command failed", ex, new { command = runCommand.Split(':', 2)[0] }); ran.TrySetResult(false); }
+                    });
+                    return IpcMessage.Create(await ran.Task.ConfigureAwait(false) ? "ok" : "failed");
                 case ShellMessages.Shutdown:
                     UiThread.Post(() => ExitShell(restoreDesktop: true));
                     return IpcMessage.Create("ok");

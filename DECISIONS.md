@@ -133,6 +133,27 @@ Shell surfaces are standard WinUI `Window`s configured as follows:
 - **Why later:** AOT for WinUI 3 in Windows App SDK 2.x is supported but still constrains XAML features and tooling. ReadyToRun already meets the startup budget (first frame 780 ms in spike S1). AOT is a size and startup optimisation, not a correctness requirement.
 - **Trigger:** Phase 6 performance work, or a startup or memory budget miss that ReadyToRun cannot fix. Native AOT also needs the VS C++ build tools (see INTEGRATIONS.md, "When deferred tools become necessary").
 
+## ADR-018 — Assistant: providers, actions as validated tools, append-only Claude conversations
+**Status:** Accepted · 2026-11-22
+- **Providers.**
+  - *On this PC* (default): the deterministic `CommandParser`, offline, no model.
+  - *Claude*: the official Anthropic C# SDK, model `claude-opus-5-5` by default, the user's own key.
+  - *Ollama*: `/api/chat` streaming to a server the user runs, answers only.
+  - Cloud use needs consent; an Ollama server on another machine counts as cloud. Conversations stay in memory and are gone when the window closes.
+- **Actions are tools, not text.** Claude gets typed tools (open app, timer, theme, volume, media, focus, workspace, performance profile, settings page, website, web search, note, weather, power). With eager input streaming the API does not validate tool input, so `AssistantActions.TryValidate` checks every field before anything runs:
+  - Malformed input goes back as an `INVALID_JSON` error result.
+  - Unusable values (an unknown workspace, a non-http URL) go back as plain errors.
+  - Tools from a turn that ended in `refusal` or `max_tokens` never run.
+- **Where actions run.** V-OS apps and Settings open in the app host. Everything else goes to the shell through the new `run` IPC message, which replies with the real outcome; sleep, restart, shut down and sign out reply only after the shell's confirmation dialog. The local provider's keyword parser is not used in front of Claude, because substring rules would hijack questions ("how do I enable dark mode in Word").
+- **Append-only conversations.** Opus 5.5 binds each thinking block to the exact system prompt, tool set and earlier messages for accounts created after 2026-08-31. Therefore:
+  - The system prompt and tools are frozen per conversation.
+  - The local time travels as a text block inside each new user message.
+  - A change of assistant settings starts a new conversation.
+  - Failed, cancelled and refused turns are removed as a trailing run.
+  - `prefix_mismatch_behavior: "drop_block"` is sent as a safety net, so a binding mismatch drops a block instead of failing the request.
+- **Refusal fallbacks.** Opus and Sonnet requests opt in to `fallbacks: "default"`, which re-serves a declined request on Anthropic's recommended model for that category. The transcript says when another model answered. Haiku has no server-side fallback, so the parameter is left out for it. When echoing a turn with a mid-output fallback, thinking and tool calls from before the last `fallback` block are omitted and the block stays in place.
+- **Effort** `medium` for responsiveness; adaptive thinking is the model default and is not displayed.
+
 ## ADR-002 — Language and runtime: C# on .NET 10 LTS
 **Status:** Accepted · 2026-11-21
 - .NET 10 is the current LTS (patch 10.0.15, SDK 10.0.404, supported until November 2028). .NET 11 (released November 2026) is STS, so it is not used for a long-lived product.

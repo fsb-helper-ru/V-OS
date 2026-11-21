@@ -433,6 +433,36 @@ public class TimerTests
     }
 }
 
+public class FlowTests
+{
+    [Fact]
+    public void Time_trigger_fires_once_in_its_window_on_matching_days()
+    {
+        var f = new VOS.Core.Flows.Flow { Trigger = new VOS.Core.Flows.FlowTrigger { Kind = "time", Time = "09:00", Days = 0b0111110 } };
+        var monday = new DateTime(2026, 11, 23, 9, 5, 0);
+        Assert.True(f.IsDue(monday));
+        Assert.False(f.IsDue(monday.AddHours(-1)));            // too early
+        Assert.False(f.IsDue(monday.AddMinutes(20)));          // window passed (PC was asleep)
+        Assert.False(f.IsDue(new DateTime(2026, 11, 22, 9, 5, 0))); // Sunday
+        f.LastRun = monday;
+        Assert.False(f.IsDue(monday.AddMinutes(1)));           // already ran today
+        Assert.True(f.IsDue(monday.AddDays(1)));               // Tuesday
+        f.Enabled = false;
+        Assert.False(f.IsDue(monday.AddDays(1)));
+    }
+
+    [Fact]
+    public void Actions_become_shell_commands()
+    {
+        Assert.Equal("app:files", new VOS.Core.Flows.FlowAction { Kind = "open-app", Value = " Files " }.ToCommand());
+        Assert.Equal("url:https://example.com", new VOS.Core.Flows.FlowAction { Kind = "open-url", Value = "example.com" }.ToCommand());
+        Assert.Equal("timer:600:Flow timer", new VOS.Core.Flows.FlowAction { Kind = "timer", Value = "10" }.ToCommand());
+        Assert.Equal("volume:100", new VOS.Core.Flows.FlowAction { Kind = "volume", Value = "250" }.ToCommand());
+        Assert.Equal("focus:off", new VOS.Core.Flows.FlowAction { Kind = "focus", Value = "OFF" }.ToCommand());
+        Assert.All(VOS.Core.Flows.Flow.Templates().SelectMany(t => t.Actions), a => Assert.NotEqual("", a.ToCommand()));
+    }
+}
+
 public class TimeDataTests
 {
     [Fact]

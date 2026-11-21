@@ -145,6 +145,9 @@ public static class ShellMessages
     public const string ActivityUpdate = "activity.update";
     public const string ActivityEnd = "activity.end";
     public const string Command = "command";
+    /// <summary>Runs a command string and replies "ok" or "failed" once it has run. Actions that need confirmation
+    /// reply after the user answers the shell's dialog. Used by the assistant so it can report what really happened.</summary>
+    public const string Run = "run";
     public const string Open = "open";
     public const string Shutdown = "shutdown";
     /// <summary>Runs a hotkey action by name ("control", "clipboard", "switcher"…): used by automation and UI tests.</summary>

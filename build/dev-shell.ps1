@@ -107,10 +107,13 @@ public static class VosGeo {
     }
     'stop' {
         $r = Send-Pipe "VOS.Shell.$sid" '{"type":"shutdown"}' $true
-        # Graceful exit restores the desktop and writes the clean-exit marker; give it up to 4 s.
-        for ($i = 0; $i -lt 20 -and (Get-Process VOS -ErrorAction SilentlyContinue); $i++) { Start-Sleep -Milliseconds 200 }
-        $left = Get-Process VOS -ErrorAction SilentlyContinue
-        if ($left) { $left | Stop-Process -Force; Start-Sleep -Milliseconds 300; & $exe --recover | Out-Null; "Forced stop + desktop recovery" } else { "Stopped gracefully ($r)" }
+        # Graceful exit restores the desktop and writes the clean-exit marker; give the shell (and its watchdog) up to 4 s.
+        # App windows are separate processes that outlive the shell by design; they are closed afterwards.
+        function Get-ShellProcs { Get-CimInstance Win32_Process -Filter "Name='VOS.exe'" | Where-Object { $_.CommandLine -notmatch '--app' } }
+        for ($i = 0; $i -lt 20 -and (Get-ShellProcs); $i++) { Start-Sleep -Milliseconds 200 }
+        $left = Get-ShellProcs
+        if ($left) { $left | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }; Start-Sleep -Milliseconds 300; & $exe --recover | Out-Null; "Forced stop + desktop recovery" } else { "Stopped gracefully ($r)" }
+        Get-CimInstance Win32_Process -Filter "Name='VOS.exe'" | Where-Object { $_.CommandLine -match '--app' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue; "Closed app host $($_.ProcessId)" }
         $wa = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
         "Work area: $wa"
         Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class VosAbm { [StructLayout(LayoutKind.Sequential)] public struct APPBARDATA { public int cbSize; public IntPtr hWnd; public uint cb; public uint edge; public int l, t, r, b; public IntPtr lParam; } [DllImport("shell32.dll")] public static extern IntPtr SHAppBarMessage(uint m, ref APPBARDATA d); public static bool AutoHide() { var d = new APPBARDATA(); d.cbSize = Marshal.SizeOf(d); return ((long)SHAppBarMessage(4, ref d) & 1) != 0; } }' -ErrorAction SilentlyContinue

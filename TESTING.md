@@ -34,6 +34,8 @@ Rules:
 | 2026-11-21 | **Spike S1 — shell surfaces** (`docs/spikes/S1/README.md`) | ✅ **Passed** (details below) |
 | 2026-11-21 | Unit and integration tests (`tests/VOS.Tests`) | ✅ 95 passed, 0 failed |
 | 2026-11-21 | **Live shell run** (Debug build, real desktop, `build/dev-shell.ps1`) | ✅ details below |
+| 2026-11-22 | Unit and integration tests (`tests/VOS.Tests`), including 25 assistant tests: action validation, Markdown, Ollama stream parsing, and the Claude conversation through the real SDK against a fake HTTP handler | ✅ 128 passed, 0 failed |
+| 2026-11-22 | **Live app verification** (Debug build, dev data root, screenshots of real windows) | ✅ details below |
 
 ### Live shell verification (Debug build, reference machine, 2026-11-21)
 How: `dev-shell.ps1 start | shot | geometry | send | stop` with an isolated data root, screenshots via the screen DC, UI Automation for element trees, `WindowFromPoint` for hit-testing, and the shell's `diag` IPC message for memory.
@@ -53,6 +55,21 @@ How: `dev-shell.ps1 start | shot | geometry | send | stop` with an isolated data
 | Control Center fits its content, never shows half-built | ✅ cloaked until device queries finish; height follows content |
 | Idle CPU (30 s, nothing animating) | ✅ 0.007 % of the machine (16 ms CPU); 0.000 % with pre-built panels |
 | Private memory: start / 2 panels pre-built / all 7 panels opened | 104 MB / 138–147 MB / 156 MB (Debug; managed heap only 4.5–5.6 MB, the rest is native XAML and composition). Release figures pending (Phase 6). |
+
+### Live app verification (Debug build, dev data root, 2026-11-21 → 22)
+Test runs avoid side effects: screenshots go to a temp folder, clipboard writes are disabled, music uses generated tones, no winget installs, no LAN listening, neutral text for online translation.
+
+| App | Verified |
+|---|---|
+| Settings | all 15 pages render; live theme and accent changes reach open apps and the shell |
+| Weather | place search and forecast from Open-Meteo |
+| Monitor · Notes · Time | live counters and process list; notes create and search; clocks, alarms, timers, calendar |
+| Files · Browser · Music | navigation and previews; example.com in WebView2; playback of generated tones |
+| Capture · Store · Gaming | screen and window capture with the selection overlay; real winget search and upgrade lists (no installs); 5 Steam games found |
+| Translate · Connect · Flow | MyMemory EN→RU; Connect start page (share server covered by a loopback test); flow list and editor |
+| Assistant, on this PC | `12 * 7`, `5 km in miles`, help text in Markdown; `weather in London` from Open-Meteo; `timer 10 min` ran through the shell's new `run` message and appeared in the V-Pill; `open notes` opened Notes in-process |
+| Assistant, Claude | consent screen and key screen appear and react to settings at once; with a deliberately invalid key the real API returned 401 and the reply showed “The Claude API key was not accepted”; changing provider mid-chat starts a new conversation (divider shown). A successful Claude answer needs the owner's own key and has not been run. |
+| Assistant, Ollama | with no server running: “Could not reach Ollama at http://localhost:11434” |
 
 ### Spike S1 transparency strategies (first run, before the fix was adopted)
 Margin pixels that must equal the background:

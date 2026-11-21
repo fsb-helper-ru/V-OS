@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <!-- VOS.exe: one executable, several roles (ADR-003): shell, app host, launcher UI, watchdog. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -27,6 +27,8 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
     <PackageReference Include="Microsoft.Graphics.Win2D" />
     <PackageReference Include="Microsoft.Web.WebView2" />
+    <PackageReference Include="QRCoder" />
+    <PackageReference Include="Anthropic" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />

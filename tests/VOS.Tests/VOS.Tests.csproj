@@ -10,6 +10,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <!-- The Claude conversation logic is UI-free; it is compiled in here and tested against a fake HTTP handler. -->
+    <PackageReference Include="Anthropic" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\VOS\Apps\Assistant\ClaudeChat.cs" Link="Linked\ClaudeChat.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\VOS.Core\VOS.Core.csproj" />

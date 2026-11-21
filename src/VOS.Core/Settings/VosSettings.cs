@@ -305,7 +305,7 @@ public sealed class AssistantSettings
 {
     /// <summary>"local", "claude" or "ollama".</summary>
     public string Provider { get; set; } = "local";
-    public string ClaudeModel { get; set; } = "claude-sonnet-5-5";
+    public string ClaudeModel { get; set; } = "claude-opus-5-5";
     /// <summary>DPAPI-protected API key ("dpapi:...").</summary>
     public string? ClaudeApiKey { get; set; }
     public string OllamaEndpoint { get; set; } = "http://localhost:11434";

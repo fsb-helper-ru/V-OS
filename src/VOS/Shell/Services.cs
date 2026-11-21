@@ -80,6 +80,96 @@ public sealed class AlarmWatcher(ShellHost host)
     }
 }
 
+/// <summary>
+/// Runs the automations made in the Flow app (data/flows.json). Time triggers are checked twice a minute; app,
+/// Focus, power and workspace triggers fire on the change itself. Actions are ordinary V-OS commands.
+/// </summary>
+public sealed class FlowEngine(ShellHost host)
+{
+    private readonly VOS.Core.Timers.SharedJsonList<VOS.Core.Flows.Flow> _flows = new("flows.json");
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _clock;
+    private HashSet<string> _apps = new(StringComparer.OrdinalIgnoreCase);
+    private bool _focus;
+    private bool? _onAc;
+    private string _workspace = "";
+
+    public void Start()
+    {
+        _flows.Watch();
+        _focus = host.FocusOn;
+        _onAc = host.Status.Battery.Present ? host.Status.Battery.OnAc : null;
+        _workspace = SettingsStore.Instance.Current.ActiveWorkspaceId;
+        _apps = CurrentApps();
+        _clock = UiThread.Timer(TimeSpan.FromSeconds(30), Tick, repeating: true);
+        _clock.Start();
+        host.Tracker.Changed += () => UiThread.Post(OnWindows);
+        host.FocusChanged += () => UiThread.Post(OnFocus);
+        host.Status.BatteryChanged += b => UiThread.Post(() => OnPower(b));
+        SettingsStore.Instance.Changed += s => UiThread.Post(() => OnWorkspace(s.ActiveWorkspaceId));
+        var startup = UiThread.Timer(TimeSpan.FromSeconds(8), () => RunWhere(f => f.Trigger.Kind == "startup"), repeating: false);
+        startup.Start();
+    }
+
+    public void RunNow(string id) { if (_flows.List().FirstOrDefault(f => f.Id == id) is { } f) Run(f, manual: true); }
+
+    private HashSet<string> CurrentApps() => new(host.Tracker.Windows.Select(w => w.ProcessName).Where(n => n.Length > 0), StringComparer.OrdinalIgnoreCase);
+
+    private void Tick()
+    {
+        var now = DateTime.Now;
+        RunWhere(f => f.IsDue(now));
+        OnWorkspace(SettingsStore.Instance.Current.ActiveWorkspaceId);
+    }
+
+    private void OnWindows()
+    {
+        var now = CurrentApps();
+        var opened = now.Except(_apps).ToList();
+        _apps = now;
+        if (opened.Count == 0) return;
+        RunWhere(f => f.Trigger.Kind == "app" && opened.Any(a => string.Equals(a, Path.GetFileNameWithoutExtension(f.Trigger.App.Trim()), StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private void OnFocus()
+    {
+        if (host.FocusOn == _focus) return;
+        _focus = host.FocusOn;
+        RunWhere(f => f.Trigger.Kind == "focus" && (f.Trigger.Value == "off") != _focus);
+    }
+
+    private void OnPower(BatteryState b)
+    {
+        if (!b.Present || _onAc == b.OnAc) return;
+        _onAc = b.OnAc;
+        RunWhere(f => f.Trigger.Kind == "power" && (f.Trigger.Value == "battery") != b.OnAc);
+    }
+
+    private void OnWorkspace(string id)
+    {
+        if (id == _workspace) return;
+        _workspace = id;
+        RunWhere(f => f.Trigger.Kind == "workspace" && string.Equals(f.Trigger.Value, id, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void RunWhere(Func<VOS.Core.Flows.Flow, bool> match)
+    {
+        foreach (var f in _flows.List().Where(f => f.Enabled && match(f))) Run(f, manual: false);
+    }
+
+    private async void Run(VOS.Core.Flows.Flow flow, bool manual)
+    {
+        _flows.Mutate(list => { if (list.FirstOrDefault(x => x.Id == flow.Id) is { } x) x.LastRun = DateTime.Now; });
+        Log.Info("Flow running", new { flow.Name, manual, trigger = flow.Trigger.Kind });
+        foreach (var a in flow.Actions)
+        {
+            var cmd = a.ToCommand();
+            if (cmd.Length == 0) continue;
+            try { await host.Commands.RunAsync(cmd); }
+            catch (Exception ex) { Log.Warn($"Flow step failed: {cmd}", ex); }
+        }
+    }
+}
+
 /// <summary>Unified notification center: history in SQLite, per-app mute, Focus rules, banners through the capsule.</summary>
 public sealed class NotificationCenter
 {
@@ -287,6 +377,13 @@ public sealed class CommandRunner(ShellHost host)
                 var a = arg.Split(':', 2);
                 if (a.Length == 2 && a[0] == "snooze") host.Alarms.Snooze(a[1], TimeSpan.FromMinutes(9));
                 return true;
+            case "flow":
+                var fl = arg.Split(':', 2);
+                if (fl.Length == 2 && fl[0] == "run") host.Flows.RunNow(fl[1]);
+                return true;
+            case "notify":
+                host.Notifications.Post(new VosNotification { AppId = "flow", AppName = "Flow", Title = arg, Glyph = Glyphs.Flow });
+                return true;
             case "focus": host.SetFocus(arg switch { "on" => true, "off" => false, _ => !host.FocusOn }); return true;
             case "timer":
                 var t = arg.Split(':', 2);
@@ -304,7 +401,34 @@ public sealed class CommandRunner(ShellHost host)
                 if (Enum.TryParse<PerformanceProfile>(arg, true, out var p)) SettingsStore.Instance.Update(s => s.Performance.Profile = p);
                 return true;
             case "system": return await SystemAsync(arg, confirmRoot);
+            case "openapp": return OpenAppByName(arg);
+            case "search": return arg.Trim().Length > 0 && ShellOps.OpenUrl(SearchUrl(arg.Trim()));
+            case "intent": return await RunIntentAsync(CommandParser.Parse(arg), confirmRoot);
         }
+        return false;
+    }
+
+    /// <summary>Opens the best match for <paramref name="name"/>: a V-OS app, else an installed app. False when nothing
+    /// matches well enough (a weak fuzzy hit must not launch an unrelated program).</summary>
+    public bool OpenAppByName(string name)
+    {
+        name = name.Trim();
+        if (name.Length == 0) return false;
+        const int MinScore = 700;
+        VosApp? vos = null; int vosScore = 0;
+        foreach (var a in VosApp.All)
+        {
+            int s = Math.Max(Fuzzy.Score(name, a.Name), Fuzzy.Score(name, a.Id));
+            if (s > vosScore) { vos = a; vosScore = s; }
+        }
+        InstalledApp? installed = null; int installedScore = 0;
+        foreach (var app in AppCatalog.Get())
+        {
+            int s = Fuzzy.Score(name, app.Name);
+            if (s > installedScore) { installed = app; installedScore = s; }
+        }
+        if (vos != null && vosScore >= MinScore && vosScore >= installedScore) { OpenApp(vos.Id); return true; }
+        if (installed != null && installedScore >= MinScore) return ShellOps.LaunchApp(installed);
         return false;
     }
 
@@ -312,6 +436,7 @@ public sealed class CommandRunner(ShellHost host)
     {
         switch (i.Kind)
         {
+            case IntentKind.OpenApp: return OpenAppByName(i.Arg("name"));
             case IntentKind.Url: return ShellOps.OpenUrl(i.Arg("url"));
             case IntentKind.Path: return ShellOps.Launch(Environment.ExpandEnvironmentVariables(i.Arg("path")));
             case IntentKind.Theme: SetTheme(i.Arg("mode")); return true;
@@ -336,7 +461,7 @@ public sealed class CommandRunner(ShellHost host)
             case IntentKind.OpenModule: OpenApp(i.Arg("module"), i.Arg("section").Length > 0 ? "section=" + i.Arg("section") : null); return true;
             case IntentKind.Performance: return await RunAsync("perf:" + i.Arg("profile"));
             case IntentKind.Settings: OpenApp("settings", i.Arg("section")); return true;
-            case IntentKind.Note: OpenApp("notes", "new=" + i.Arg("text")); return true;
+            case IntentKind.Note: OpenApp("notes", JoinArgs("new=1", "text=" + i.Arg("text"))); return true;
             case IntentKind.WebSearch: return ShellOps.OpenUrl(SearchUrl(i.Arg("query")));
             case IntentKind.Calculate or IntentKind.Convert:
                 host.Clipboard?.SetText(i.Title);

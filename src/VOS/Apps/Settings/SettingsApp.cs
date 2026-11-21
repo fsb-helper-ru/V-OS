@@ -557,8 +557,6 @@ public sealed class SettingsApp : IAppModule
             var path = await Pickers.FolderAsync(Frame.Hwnd);
             if (path != null) { Set(x => { x.Music.LibraryFolders ??= []; if (!x.Music.LibraryFolders.Contains(path, StringComparer.OrdinalIgnoreCase)) x.Music.LibraryFolders.Add(path); }); Refresh(); }
         })));
-        folderRows.Add(Kit.Setting("Visualizer", null, Kit.Toggle(s.Music.ShowVisualizer, v => Set(x => x.Music.ShowVisualizer = v))));
-        folderRows.Add(Kit.Setting("Crossfade between songs", null, Kit.Toggle(s.Music.Crossfade, v => Set(x => x.Music.Crossfade = v))));
         page.Children.Add(Kit.Group([.. folderRows]));
 
         page.Children.Add(Kit.Section("Assistant"));
@@ -576,8 +574,12 @@ public sealed class SettingsApp : IAppModule
                 Kit.Choice<string>([("local", "On this PC (commands and help)"), ("claude", "Claude (Anthropic)"), ("ollama", "Ollama (local server)")], s.Assistant.Provider, v => Set(x => x.Assistant.Provider = v)), Glyphs.Sparkle),
             Kit.Setting("Allow cloud assistant", "Your questions, and only what you choose to attach, are sent to the provider.", Kit.Toggle(s.Privacy.CloudAssistantConsent, v => Set(x => x.Privacy.CloudAssistantConsent = v))),
             Kit.Setting("Claude API key", "Stored with Windows data protection (DPAPI) for your account only.", Kit.Row(6, keyBox, Buttons.Icon(Glyphs.Delete, () => { Set(x => x.Assistant.ClaudeApiKey = null); Refresh(); }, 32, 13, "Forget key"))),
-            Kit.Setting("Claude model", null, Kit.Choice<string>([("claude-sonnet-5-5", "Claude Sonnet 5.5"), ("claude-opus-5-5", "Claude Opus 5.5"), ("claude-haiku-5-5", "Claude Haiku 5.5")], s.Assistant.ClaudeModel, v => Set(x => x.Assistant.ClaudeModel = v))),
-            Kit.Setting("Ollama server", null, Kit.Field(s.Assistant.OllamaEndpoint, "http://localhost:11434", v => Set(x => x.Assistant.OllamaEndpoint = v.Trim()))),
+            Kit.Setting("Claude model", "Opus is the most capable; Haiku is the fastest and cheapest.", Kit.Choice<string>([("claude-opus-5-5", "Claude Opus 5.5"), ("claude-sonnet-5-5", "Claude Sonnet 5.5"), ("claude-haiku-5-5", "Claude Haiku 5.5")], s.Assistant.ClaudeModel, v => Set(x => x.Assistant.ClaudeModel = v))),
+            Kit.Setting("Ollama server", "A server that is not on this PC counts as a cloud provider and needs your consent.", Kit.Field(s.Assistant.OllamaEndpoint, "http://localhost:11434", v =>
+            {
+                var url = v.Trim();
+                if (VOS.Core.Assistant.OllamaClient.IsValidEndpoint(url)) Set(x => x.Assistant.OllamaEndpoint = url.TrimEnd('/'));
+            })),
             Kit.Setting("Ollama model", null, Kit.Field(s.Assistant.OllamaModel, "llama3.2", v => Set(x => x.Assistant.OllamaModel = v.Trim()), 160)),
             Kit.Setting("Let the assistant run V-OS actions", "Opening apps, changing settings, starting timers. It always asks before anything destructive.", Kit.Toggle(s.Assistant.AllowSystemActions, v => Set(x => x.Assistant.AllowSystemActions = v)))));
 

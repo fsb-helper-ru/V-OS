@@ -27,7 +27,8 @@ public static class Glyphs
         Heart = "", HeartFilled = "", Shuffle = "", Repeat = "", RepeatOne = "", Mic = "",
         Cpu = "", Memory = "", Disk = "", Network = "", Briefcase = "", Book = "", Video = "",
         Archive = "", Filter = "", Sort = "", Tag = "", History = "", Bookmark = "", Tab = "",
-        Split = "", Reader = "", Puzzle = "", Device = "", Send = "", Wand = "", Gauge = "";
+        Split = "", Reader = "", Puzzle = "", Device = "", Send = "", Wand = "", Gauge = "",
+        Stop = "", Sliders = "";
 }
 
 /// <summary>Identity of a built-in V-OS application: name, glyph and its two-tone colour.</summary>

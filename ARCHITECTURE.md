@@ -36,7 +36,7 @@ All roles below are one self-contained executable, `VOS.exe`, started in differe
  │              weather · clipboard · timers · workspaces · focus ·        │
  │              flows · window tracker · adaptive-quality governor          │
  │   IPC      : \\.\pipe\VOS.Shell.<user-SID>   (CurrentUserOnly)          │
- │                   ▲ JSON lines: notify · activity · open · command      │
+ │        ▲ JSON lines: notify · activity · open · command · run · diag  │
  │ VOS.Apps.exe   (WinUI 3 app host · on demand)                           │
  │   Files · Music · Weather · Settings · Monitor · Notes · Time ·         │
  │   Capture · Store · Gaming · Assistant · Translate · Connect · Flow     │
@@ -103,6 +103,13 @@ Lower layers never reference higher ones. Modules talk to each other through Cor
 | Game library | Steam (`libraryfolders.vdf`, `appmanifest_*.acf`), Epic (manifests), GOG (registry), manual entries. No injection, ever. |
 | Metrics | PDH using English counter names (locale-safe), DXGI adapter info, `GlobalMemoryStatusEx` |
 | Startup and uninstall registration | `HKCU\...\Run`, `HKCU\...\Uninstall\V-OS` |
+| Assistant | Claude through the official Anthropic SDK (streaming, typed tools); Ollama `/api/chat` (NDJSON); actions run through the shell's `run` IPC message (ADR-018) |
+
+### Assistant action path
+1. The model proposes a tool call, or the on-device parser recognises a command.
+2. `AssistantActions.TryValidate` (Core) checks every field. Invalid input is answered with an error and never runs.
+3. V-OS apps and Settings open in the app host directly. Other actions go to the shell as a command string over the `run` message: `timer:`, `theme:`, `volume:`, `media:`, `focus:`, `workspace:`, `perf:`, `url:`, `search:`, `openapp:`, `intent:`, `system:`.
+4. The shell replies `ok` or `failed`. For sleep, restart, shut down and sign out it replies only after its own confirmation dialog. The outcome goes back to the model and into the transcript.
 
 ## 6. Data
 ```
@@ -142,6 +149,7 @@ Profiles: Adaptive · Quality · Balanced · Performance · Minimal. Each change
 - No elevation at runtime. Admin is requested only by explicit, consented setup steps (for example the VC++ runtime install).
 - IPC is limited to the current user. Settings secrets use DPAPI.
 - Network access only to documented endpoints and only after consent where personal data could be involved (location, cloud AI, online translation).
+- Assistant: the model cannot run arbitrary commands. It can only call the fixed tool set; every input is validated, only http and https URLs open, and destructive power actions need the user's confirmation in the shell. Assistant conversations are not stored.
 - Updates: an ECDSA-signed manifest plus SHA-256 package hashes, with automatic rollback.
 - Never touched: Defender, UAC, Firewall, Windows Update, Secure Boot, system files, unsupported registry areas.
 

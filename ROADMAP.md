@@ -4,7 +4,7 @@ The goal is one complete, integrated, tested V-OS 1.0 release. The phases below 
 
 Legend: ✅ done · 🔄 in progress · ⏸ waiting on the owner · ⬜ not started
 
-_Last updated: 2026-11-21._
+_Last updated: 2026-11-22._
 
 ## Phase 0 — Environment and decisions
 - ✅ .NET 10.0.404 SDK installed user-local (owner-approved), verified
@@ -20,33 +20,39 @@ _Last updated: 2026-11-21._
 - ✅ DWM thumbnails in WinUI windows; compositor springs independent of the UI thread; idle CPU 0.06 %
 - ✅ Memory 98 MB, first frame 780 ms, payload 217 MB; no VC++ runtime dependency; component packages (ADR-016)
 
-## Phase 2 — Foundations
-- 🔄 VOS.Core: foundation services ✅ (paths, JSON, atomic files, logging, crash reports, formatting), settings model ✅; still to do: settings store, SQLite, IPC, quality resolver, weather, search parser, updates, notes, calendar, timers, clipboard, flows
-- ⬜ VOS.Platform: Win32/COM/WinRT services (AOT-ready interop)
-- ⬜ VOS.UI: "Instrument" design system (tokens, themes, typography, icons, controls, composition helpers, window helpers)
+## Phase 2 — Foundations ✅
+- ✅ VOS.Core: paths, JSON, atomic files, logging, crash reports, settings store and migration, SQLite, IPC, quality resolver, weather, search and command parser, unit conversion, update manifests, notes, calendar (ICS), timers and alarms, flows, translation, assistant actions, Markdown subset
+- ✅ VOS.Platform: Win32/COM/WinRT services (windows, shell items and icons, file operations, audio endpoints and sessions, media sessions, power, network, processes, screen capture, winget, game libraries, local share server)
+- ✅ VOS.UI: "Instrument" design system (tokens, live themes and accent retint, typography, icons, controls, app kit, virtualised lists, Markdown view, composition helpers, surfaces)
 
-## Phase 3 — Shell
-- ⬜ Top bar · V-Pill capsule · dock · desktop and ambient · widgets
-- ⬜ Command and search · control center · activity center (notifications plus timeline)
-- ⬜ Clipboard · drop shelf · switcher · layout zones · workspaces · focus · flows · lock presentation
-- ⬜ Onboarding · companion and immersive modes · watchdog and recovery
+## Phase 3 — Shell ✅
+- ✅ Top bar · V-Pill capsule · dock · desktop and ambient · widgets
+- ✅ Command and search · control center (including output device and per-app volume) · activity center (notifications plus timeline)
+- ✅ Clipboard · drop shelf · switcher · layout zones · workspaces · focus · flows · alarms · lock presentation
+- ✅ Onboarding · companion and immersive modes · watchdog and recovery
 
-## Phase 4 — Apps
-- ⬜ Settings (including Privacy and Snapshots) · Files (including Archive) · Browser · Music · Weather · Monitor
-- ⬜ Notes · Time (clocks, timers, stopwatch, calendar) · Capture · Store · Gaming
-- ⬜ Assistant · Translate · Connect · Flow editor
+## Phase 4 — Apps ✅
+- ✅ Settings (including Privacy and Snapshots) · Files (including Archive) · Browser · Music · Weather · Monitor
+- ✅ Notes · Time (clocks, alarms, timers, stopwatch, calendar) · Capture · Store · Gaming
+- ✅ Translate · Connect · Flow editor · Assistant (on this PC, Claude, Ollama; ADR-018)
 
 ## Phase 5 — Delivery
-- ⬜ Bootstrapper `V-Launcher.exe` · WinUI installer and maintenance UI
-- ⬜ Updater (signed feed) · rollback · recovery · uninstall
+- 🔄 WinUI installer and maintenance UI (`--launcher`): first version exists; full install, repair, update, rollback and uninstall flows to finish
+- ⬜ Bootstrapper `V-Launcher.exe` (single file) · updater with signed feed · rollback · recovery · uninstall
 - ⬜ Reproducible `build/build.ps1` · GitHub Actions CI and release workflow (needs H1)
 
 ## Phase 6 — Quality
-- ⬜ Unit, integration and UI automation tests · end-to-end install/update/rollback/uninstall (Windows Sandbox, H4)
-- ⬜ Performance measurement against budgets · regression pass · documentation (user guide, limitations, privacy, security)
+- 🔄 Unit and integration tests (128 passing) · live verification of every app with screenshots
+- ⬜ FlaUI UI automation suite · end-to-end install/update/rollback/uninstall (Windows Sandbox, H4)
+- ⬜ Release measurements against budgets (start, memory, 10-minute idle CPU) · documentation (user guide, limitations, privacy, security, third-party notices)
 
 ## Phase 7 — Release 1.0.0
 - ⬜ Final build, verification, release notes, signed artifacts (when O2 is available)
 
+## After 1.0 (tracked, not in the 1.0 scope)
+- Interface localization (English and Russian first). Today the interface is English while dates and numbers follow the regional format.
+- Music: equalizer, visualizer, crossfade. Capture: screen recording.
+- Native AOT and trimming (ADR-017).
+
 ## Next action
-Owner approvals (Phase 0). Then spike S1 and continued development.
+Phase 5: the launcher (install, update with rollback, uninstall) and the reproducible release build.
