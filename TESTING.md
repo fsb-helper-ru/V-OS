@@ -32,7 +32,27 @@ Rules:
 | 2026-11-21 | Toolchain sanity: .NET 10.0.404 desktop project builds through the short build root | ✅ Build succeeded in 4.8 s |
 | 2026-11-21 | WinUI 3 (Windows App SDK 2.7.0) unpackaged, self-contained build with the `dotnet` CLI, no Visual Studio | ✅ 0 errors, 0 warnings. First restore and build took 115 s. |
 | 2026-11-21 | **Spike S1 — shell surfaces** (`docs/spikes/S1/README.md`) | ✅ **Passed** (details below) |
-| — | Product tests | Begin with the foundations (Phase 2) |
+| 2026-11-21 | Unit and integration tests (`tests/VOS.Tests`) | ✅ 95 passed, 0 failed |
+| 2026-11-21 | **Live shell run** (Debug build, real desktop, `build/dev-shell.ps1`) | ✅ details below |
+
+### Live shell verification (Debug build, reference machine, 2026-11-21)
+How: `dev-shell.ps1 start | shot | geometry | send | stop` with an isolated data root, screenshots via the screen DC, UI Automation for element trees, `WindowFromPoint` for hit-testing, and the shell's `diag` IPC message for memory.
+
+| Check | Result |
+|---|---|
+| Top bar, V-Pill, dock render; glyphs correct | ✅ after fixing cp1251 corruption and wrong code points (`--glyph-test`) |
+| Shell ready (process start → all surfaces) | 1.5 s Debug (Release measurement pending, Phase 6) |
+| Adaptive quality on GTX 970 | ✅ "Quality" (was wrongly "Performance": GPU probe ran before any compositor existed) |
+| Hotkeys | ✅ all 13 registered; 4 preferred chords were taken by other apps, so fallbacks were used (`state/hotkeys-active.json`) |
+| Dock reserves space (AppBar); maximised windows end above it | ✅ work area 1680×928 from Y=34 |
+| Taskbar auto-hide applied, then restored by a graceful stop | ✅ work area and auto-hide returned to the recorded values |
+| Dock icons of running apps (incl. packaged apps) | ✅ after serialising extraction on an STA thread (was `E_PENDING` → blank icons) |
+| Surface windows have no non-client frame | ✅ client = window for every surface (was a 3 px frame: light line under the dock) |
+| Panel open: black frames in 20 consecutive opens | ✅ 0 (was up to 6 in 15 because of the LayerVisual shadow) |
+| Closed panel passes clicks through and returns focus | ✅ `WindowFromPoint` hits the app below; foreground returns to the previous app |
+| Control Center fits its content, never shows half-built | ✅ cloaked until device queries finish; height follows content |
+| Idle CPU (30 s, nothing animating) | ✅ 0.007 % of the machine (16 ms CPU); 0.000 % with pre-built panels |
+| Private memory: start / 2 panels pre-built / all 7 panels opened | 104 MB / 138–147 MB / 156 MB (Debug; managed heap only 4.5–5.6 MB, the rest is native XAML and composition). Release figures pending (Phase 6). |
 
 ### Spike S1 transparency strategies (first run, before the fix was adopted)
 Margin pixels that must equal the background:

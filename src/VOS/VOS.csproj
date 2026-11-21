@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- VOS.exe: one executable, several roles (ADR-003): shell, app host, launcher UI, watchdog. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>$(VosWindowsTfm)</TargetFramework>
+    <TargetPlatformMinVersion>$(VosMinWindows)</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>$(VosMinWindows)</SupportedOSPlatformVersion>
+    <RootNamespace>VOS</RootNamespace>
+    <AssemblyName>VOS</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Platforms>x64;ARM64</Platforms>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishReadyToRun Condition="'$(Configuration)' == 'Release'">true</PublishReadyToRun>
+    <NoWarn>$(NoWarn);CsWinRT1028;CsWinRT1030;WMC1509</NoWarn>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VOS.Core\VOS.Core.csproj" />
+    <ProjectReference Include="..\VOS.Platform\VOS.Platform.csproj" />
+    <ProjectReference Include="..\VOS.UI\VOS.UI.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
+

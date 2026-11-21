@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- V-Design: the shared WinUI 3 design system and shell-surface toolkit (tokens, theming, glass, motion, controls). -->
+  <PropertyGroup>
+    <TargetFramework>$(VosWindowsTfm)</TargetFramework>
+    <TargetPlatformMinVersion>$(VosMinWindows)</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>$(VosMinWindows)</SupportedOSPlatformVersion>
+    <RootNamespace>VOS.UI</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <Platforms>x64;ARM64</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CsWinRT1028;CsWinRT1030</NoWarn>
+    <Win2DWarnNoPlatform>false</Win2DWarnNoPlatform>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VOS.Core\VOS.Core.csproj" />
+    <ProjectReference Include="..\VOS.Platform\VOS.Platform.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" />
+  </ItemGroup>
+</Project>

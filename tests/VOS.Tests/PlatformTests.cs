@@ -34,6 +34,46 @@ public class PlatformTests
     }
 
     [Fact]
+    public void Shell_icons_are_premultiplied_for_composition()
+    {
+        // WinUI composes premultiplied BGRA: a colour channel above its alpha would render as a bright fringe.
+        var chrome = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+        var img = IconService.Extract(chrome, 46, thumbnail: false)!;
+        Assert.NotNull(img);
+        for (int i = 0; i < img.Bgra.Length; i += 4)
+        {
+            byte a = img.Bgra[i + 3];
+            Assert.True(img.Bgra[i] <= a && img.Bgra[i + 1] <= a && img.Bgra[i + 2] <= a, $"pixel {i / 4} is not premultiplied");
+        }
+        Assert.Contains(Enumerable.Range(0, img.Bgra.Length / 4), p => img.Bgra[p * 4 + 3] is > 0 and < 255);
+    }
+
+    [Fact]
+    public void Icon_cache_round_trip_preserves_premultiplied_pixels()
+    {
+        // Semi-transparent edge pixels must come back from the PNG cache unchanged (±2 for 8-bit rounding), not darker.
+        var src = new byte[16 * 16 * 4];
+        for (int p = 0; p < 256; p++)
+        {
+            byte a = (byte)(p % 2 == 0 ? 255 : p);
+            src[p * 4] = (byte)(200 * a / 255); src[p * 4 + 1] = (byte)(120 * a / 255); src[p * 4 + 2] = (byte)(40 * a / 255); src[p * 4 + 3] = a;
+        }
+        var back = PngCodec.Decode(new PixelImage(16, 16, src).ToPng())!;
+        for (int i = 0; i < src.Length; i++) Assert.InRange(back.Bgra[i] - src[i], -2, 2);
+    }
+
+    [Fact]
+    public async Task Icons_requested_concurrently_all_arrive()
+    {
+        // Parallel requests used to fail with E_PENDING from the shell; the icon thread serialises them.
+        var dir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        var sources = new[] { "explorer.exe", "notepad.exe", "regedit.exe", "HelpPane.exe", "write.exe", "splwow64.exe" }
+            .Select(f => Path.Combine(dir, f)).Where(File.Exists).ToArray();
+        var results = await Task.WhenAll(sources.Select(s => Task.Run(() => IconService.GetAsync(s, 40 + Array.IndexOf(sources, s)))));
+        Assert.All(results, r => Assert.NotNull(r));
+    }
+
+    [Fact]
     public void Hardware_probe_describes_this_machine()
     {
         var h = HardwareProbe.Probe();

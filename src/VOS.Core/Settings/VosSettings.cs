@@ -88,6 +88,8 @@ public sealed class ShellSettings
     public ShellMode Mode { get; set; } = ShellMode.Companion;
     public bool StartWithWindows { get; set; } = true;
     public bool HideTaskbarInImmersive { get; set; } = true;
+    /// <summary>Companion mode: auto-hide the Windows taskbar so the V-OS dock is the primary launcher (restored on exit).</summary>
+    public bool AutoHideTaskbar { get; set; } = true;
     public bool HideDesktopIconsInImmersive { get; set; } = true;
     public bool WinKeyOpensLauncher { get; set; } = true;
     public bool TopBarReservesSpace { get; set; } = true;
@@ -131,7 +133,7 @@ public sealed class DockSettings
     public bool AutoHide { get; set; }
     public bool ShowRecent { get; set; } = true;
     public bool ShowTrash { get; set; } = true;
-    public bool ReserveSpace { get; set; }
+    public bool ReserveSpace { get; set; } = true;
     public List<DockItem>? Pinned { get; set; } = DefaultPinned();
 
     public static List<DockItem> DefaultPinned() =>
@@ -334,7 +336,7 @@ public sealed class UpdateSettings
 public sealed class HotkeyBinding
 {
     public string Action { get; set; } = "";
-    /// <summary>e.g. "Alt+Space", "Win+Shift+V", "Ctrl+Alt+S".</summary>
+    /// <summary>e.g. "Alt+Space"; alternatives separated by "|" are tried in order until one is free.</summary>
     public string Gesture { get; set; } = "";
     public bool Enabled { get; set; } = true;
 }
@@ -345,7 +347,7 @@ public sealed class HotkeySettings
 
     public static List<HotkeyBinding> Defaults() =>
     [
-        new() { Action = "command", Gesture = "Alt+Space" },
+        new() { Action = "command", Gesture = "Alt+Space|Ctrl+Alt+Space|Win+Alt+Space" },
         new() { Action = "clipboard", Gesture = "Win+Alt+V" },
         new() { Action = "switcher", Gesture = "Alt+Q" },
         new() { Action = "control", Gesture = "Win+Alt+C" },
@@ -354,8 +356,8 @@ public sealed class HotkeySettings
         new() { Action = "capture.screen", Gesture = "Ctrl+Alt+P" },
         new() { Action = "capture.window", Gesture = "Ctrl+Alt+W" },
         new() { Action = "layout", Gesture = "Win+Alt+Z" },
-        new() { Action = "drop", Gesture = "Win+Alt+D" },
-        new() { Action = "translate.clipboard", Gesture = "Win+Alt+T" },
+        new() { Action = "drop", Gesture = "Win+Alt+D|Win+Alt+O|Ctrl+Alt+D" },
+        new() { Action = "translate.clipboard", Gesture = "Win+Alt+T|Win+Alt+Y|Ctrl+Alt+T" },
         new() { Action = "lock", Gesture = "Win+Alt+L" },
         new() { Action = "recovery", Gesture = "Ctrl+Alt+Shift+F12" },
     ];

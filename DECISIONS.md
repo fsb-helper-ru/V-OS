@@ -111,11 +111,27 @@ Shell surfaces are standard WinUI `Window`s configured as follows:
 
 **Fallback:** a XAML island in a `WS_EX_NOREDIRECTIONBITMAP` popup is also transparent. Never assign a custom backdrop to a `DesktopWindowXamlSource`: it crashes in 2.7.
 
+**Additions from the first live shell runs (2026-11-21):**
+8. **Frameless client area.** WinUI re-applies `WS_DLGFRAME`/`WS_SYSMENU` whenever the presenter syncs, which brings back a 3 px classic frame: a light line under the dock, and top-bar content squeezed from 34 to 28 px. Every `SurfaceWindow` subclasses its HWND and answers `WM_NCCALCSIZE` (wParam = TRUE) with 0, so the client area is always the whole window. `dev-shell.ps1 geometry` reports any remaining frame.
+9. **Panels are cloaked, not hidden.** Re-showing a hidden WinUI window can flash one black frame before XAML re-presents. A panel is shown once (DWM-cloaked, `DWMWA_CLOAK`) and stays shown. Closing it cloaks it and hands keyboard focus back. Opening it updates the content, waits for a rendered frame plus a DWM composition pass (`DwmFlush`), and only then uncloaks and plays the entrance. Cloaked windows are not hit-testable (verified with `WindowFromPoint`) and cost no idle CPU (0.000 % measured). The panels opened most often are pre-built during idle time 2 s after start.
+10. **Composition shadows use a mask.** A `LayerVisual` drop shadow over a near-transparent shape sometimes rendered the shape solid black for a frame (6 of 15 opens flashed black, 0 of 15 without the shadow). Shadows are now a `SpriteVisual` + `DropShadow` whose `Mask` is an opaque rounded rectangle in a `CompositionVisualSurface` (0 black frames in 20 opens). The shadow sits inside the animated card, so it fades in with it.
+11. **Shell icons come from one STA thread.** `IShellItemImageFactory` answers concurrent requests with `E_PENDING`, which left blank dock icons. `IconService` serves requests one at a time on a dedicated STA thread, retries briefly when pending, never caches a failure, and premultiplies the shell's straight-alpha pixels (WinUI composes premultiplied BGRA). Callers use `Images.LoadIcon`/`IconService.GetAsync`, never `Task.Run(IconService.Get)`.
+
 ## ADR-016 — Windows App SDK component package
 **Status:** Accepted · 2026-11-21
 - V-OS references `Microsoft.WindowsAppSDK.WinUI` 2.7.0, which brings WinUI, Foundation, InteractiveExperiences and Base. It does not use the `Microsoft.WindowsAppSDK` metapackage, which adds on-device AI/ML runtimes (onnxruntime, DirectML), semantic search, widgets, and 165 MB of MSIX installers that only framework-dependent deployment needs.
 - Effect: self-contained output went from 281.6 MB to 216.9 MB with identical behaviour.
 - Revisit if V-OS adopts a feature from those components.
+
+## ADR-017 — Interop and JSON on the way to Native AOT
+**Status:** Accepted · 2026-11-21
+- **Today** the shell uses `[ComImport]` interfaces (shell items, property stores, Known Folders) and reflection-based `System.Text.Json`. Both work in the self-contained ReadyToRun build that ships first.
+- **Before any Native AOT or trimmed build:**
+  - convert every `[ComImport]` interface to `[GeneratedComInterface]` and every `DllImport` with non-blittable signatures to `LibraryImport`;
+  - move `VosJson` to a `JsonSerializerContext` covering every persisted and IPC type.
+  The code already avoids `dynamic` and reflection-based activation, except the app-module registry, which must become an explicit list.
+- **Why later:** AOT for WinUI 3 in Windows App SDK 2.x is supported but still constrains XAML features and tooling. ReadyToRun already meets the startup budget (first frame 780 ms in spike S1). AOT is a size and startup optimisation, not a correctness requirement.
+- **Trigger:** Phase 6 performance work, or a startup or memory budget miss that ReadyToRun cannot fix. Native AOT also needs the VS C++ build tools (see INTEGRATIONS.md, "When deferred tools become necessary").
 
 ## ADR-002 — Language and runtime: C# on .NET 10 LTS
 **Status:** Accepted · 2026-11-21
@@ -127,7 +143,13 @@ Shell surfaces are standard WinUI `Window`s configured as follows:
   - Avoid `dynamic`.
 
 ## ADR-003 — Process model
-**Status:** Accepted · 2026-11-21
+**Status:** Accepted · 2026-11-21 · **Revised 2026-11-21:** one executable with modes
+
+**Revision.** The roles below ship as a single self-contained `VOS.exe` selected by command-line mode, not as separate executables:
+`--shell` (default), `--app <id> [args]` (app host; one process hosts every app window, the browser gets its own instance), `--launcher`, `--watchdog <pid>`, `--recover`, `--health-check`, `--glyph-test`.
+One binary means one copy of the ~200 MB self-contained runtime instead of three, a single code-signing and update unit, and identical code in the watchdog and the shell it guards. Process isolation is unchanged: each role still runs as its own process.
+
+Original plan, kept for reference (the roles still apply):
 
 | Process | Role |
 |---|---|
@@ -140,6 +162,9 @@ Shell surfaces are standard WinUI `Window`s configured as follows:
 ## ADR-004 — Shell integration modes
 **Status:** Accepted · 2026-11-21
 - **Companion mode** (default) runs on top of Explorer. The top bar is an AppBar. Windows UI stays reachable.
+  - *Revised 2026-11-21:* the dock also registers as a bottom AppBar (`Dock.ReserveSpace`, on by default), so maximised windows end above it instead of under it. Intellihide is used only when the dock does not reserve space.
+  - The Windows taskbar is set to auto-hide while V-OS runs (`Shell.AutoHideTaskbar`, on by default), so the dock owns the bottom edge and the taskbar is one mouse move away. Auto-hide is a persisted Explorer setting, so the original value is recorded first and restored on exit, by the watchdog, at the next start, by the recovery hotkey, by Launcher → Recovery and by uninstall. Verified: a graceful stop restored the work area and auto-hide exactly.
+  - Fullscreen apps (games, video, presentations) get the whole screen: on `ABN_FULLSCREENAPP` every V-OS surface steps aside.
 - **Immersive mode** (opt-in) applies three reversible changes:
   1. Hides the Windows taskbar (auto-hide state plus `SW_HIDE`).
   2. Hides desktop icons.

@@ -14,22 +14,74 @@ public sealed record PixelImage(int Width, int Height, byte[] Bgra)
     public byte[] ToPng() => PngCodec.Encode(this);
 }
 
-/// <summary>Shell icons and thumbnails via IShellItemImageFactory, with memory and disk caches.</summary>
+/// <summary>
+/// Shell icons and thumbnails via IShellItemImageFactory, with memory and disk caches.
+/// All extraction runs on one dedicated STA thread: the shell's image factories are apartment-sensitive and answer
+/// concurrent requests with E_PENDING, so requests are queued, served one at a time, and retried briefly when pending.
+/// </summary>
 public static class IconService
 {
-    private static readonly ConcurrentDictionary<string, PixelImage?> s_memory = new(StringComparer.OrdinalIgnoreCase);
+    private const int E_PENDING = unchecked((int)0x8000000A);
+    private sealed record Request(string ParsingName, int Size, bool Thumbnail, TaskCompletionSource<PixelImage?> Done);
+
+    private static readonly ConcurrentDictionary<string, PixelImage> s_memory = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly BlockingCollection<Request> s_queue = [];
+    private static readonly object s_gate = new();
+    private static Thread? s_worker;
     private static string CacheDir => Directory.CreateDirectory(Path.Combine(VosPaths.Cache, "icons")).FullName;
 
     [StructLayout(LayoutKind.Sequential)] private struct BITMAP { public int bmType, bmWidth, bmHeight, bmWidthBytes; public ushort bmPlanes, bmBitsPixel; public IntPtr bmBits; }
     [DllImport("gdi32.dll")] private static extern int GetObjectW(IntPtr h, int size, out BITMAP bm);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(IntPtr o);
 
-    /// <summary>Icon for a parsing name (file path, "shell:AppsFolder\..." item, folder). Thread-safe; call off the UI thread.</summary>
-    public static PixelImage? Get(string parsingName, int size, bool thumbnail = false)
+    private static string Key(string parsingName, int size, bool thumbnail) => $"{parsingName}|{size}|{thumbnail}";
+
+    /// <summary>
+    /// Icon for a parsing name (file path, "shell:AppsFolder\..." item, folder). Completes synchronously from the memory
+    /// cache, otherwise on the icon thread. Never throws; completes with null when no icon is available.
+    /// </summary>
+    public static Task<PixelImage?> GetAsync(string parsingName, int size, bool thumbnail = false)
     {
-        var key = $"{parsingName}|{size}|{thumbnail}";
+        if (s_memory.TryGetValue(Key(parsingName, size, thumbnail), out var hit)) return Task.FromResult<PixelImage?>(hit);
+        EnsureWorker();
+        var done = new TaskCompletionSource<PixelImage?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        s_queue.Add(new Request(parsingName, size, thumbnail, done));
+        return done.Task;
+    }
+
+    /// <summary>Blocking variant for background threads. Never call it on a UI thread.</summary>
+    public static PixelImage? Get(string parsingName, int size, bool thumbnail = false) =>
+        Thread.CurrentThread == s_worker ? Load(parsingName, size, thumbnail) : GetAsync(parsingName, size, thumbnail).GetAwaiter().GetResult();
+
+    private static void EnsureWorker()
+    {
+        if (s_worker != null) return;
+        lock (s_gate)
+        {
+            if (s_worker != null) return;
+            var t = new Thread(Work) { IsBackground = true, Name = "V-OS shell icons", Priority = ThreadPriority.BelowNormal };
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+            s_worker = t;
+        }
+    }
+
+    private static void Work()
+    {
+        // Blocking waits on an STA thread pump COM messages, so shell callbacks into this apartment still run.
+        foreach (var r in s_queue.GetConsumingEnumerable())
+        {
+            try { r.Done.TrySetResult(Load(r.ParsingName, r.Size, r.Thumbnail)); }
+            catch (Exception ex) { Log.Warn("Icon request failed", ex); r.Done.TrySetResult(null); }
+        }
+    }
+
+    private static PixelImage? Load(string parsingName, int size, bool thumbnail)
+    {
+        var key = Key(parsingName, size, thumbnail);
         if (s_memory.TryGetValue(key, out var cached)) return cached;
-        var disk = Path.Combine(CacheDir, Hash(key) + ".png");
+        // v2: pixels are premultiplied before caching (v1 cached straight alpha as if it were premultiplied).
+        var disk = Path.Combine(CacheDir, Hash("v2|" + key) + ".png");
         PixelImage? img = null;
         try
         {
@@ -38,14 +90,27 @@ public static class IconService
         }
         catch { img = null; }
         img ??= Extract(parsingName, size, thumbnail);
-        if (img != null && !thumbnail) { try { File.WriteAllBytes(disk, img.ToPng()); } catch { } }
+        if (img == null) return null; // never remember a failure: the next request retries
+        if (!thumbnail) { try { File.WriteAllBytes(disk, img.ToPng()); } catch { } }
         if (s_memory.Count > 800) s_memory.Clear();
         s_memory[key] = img;
         return img;
     }
 
+    /// <summary>Extracts directly (no cache), retrying while the shell reports the image as pending.</summary>
     public static PixelImage? Extract(string parsingName, int size, bool thumbnail)
     {
+        for (int attempt = 0; ; attempt++)
+        {
+            var img = ExtractOnce(parsingName, size, thumbnail, out int hr);
+            if (img != null || hr != E_PENDING || attempt == 4) return img;
+            Thread.Sleep(30 << attempt); // 30, 60, 120, 240 ms
+        }
+    }
+
+    private static PixelImage? ExtractOnce(string parsingName, int size, bool thumbnail, out int hr)
+    {
+        hr = 0;
         IShellItem? item = null;
         try
         {
@@ -53,12 +118,25 @@ public static class IconService
             ShellNative.SHCreateItemFromParsingName(parsingName, IntPtr.Zero, ref iid, out item);
             if (item is not IShellItemImageFactory factory) return null;
             var flags = thumbnail ? SIIGBF.BIGGERSIZEOK : SIIGBF.ICONONLY | SIIGBF.BIGGERSIZEOK;
-            if (factory.GetImage(new SIZE(size, size), flags, out var hbm) != 0 || hbm == IntPtr.Zero) return null;
-            try { return FromHBitmap(hbm); }
+            hr = factory.GetImage(new SIZE(size, size), flags, out var hbm);
+            if (hr != 0 || hbm == IntPtr.Zero)
+            {
+                if (hr != E_PENDING) Log.Info("Icon extraction failed", new { parsingName, size, hr = $"0x{hr:X8}" });
+                return null;
+            }
+            try
+            {
+                var img = FromHBitmap(hbm);
+                if (img == null) Log.Info("Icon bitmap unreadable", new { parsingName, size });
+                return img;
+            }
             finally { DeleteObject(hbm); }
         }
-        catch (Exception ex) when (ex is COMException or ArgumentException or FileNotFoundException or UnauthorizedAccessException)
+        catch (Exception ex)
         {
+            hr = ex.HResult;
+            if (ex is not (FileNotFoundException or DirectoryNotFoundException))
+                Log.Info("Icon extraction failed", new { parsingName, size, error = ex.GetType().Name + ": " + ex.Message });
             return null;
         }
         finally
@@ -66,7 +144,6 @@ public static class IconService
             if (item != null) Marshal.ReleaseComObject(item);
         }
     }
-
     private static PixelImage? FromHBitmap(IntPtr hbm)
     {
         if (GetObjectW(hbm, Marshal.SizeOf<BITMAP>(), out var bm) == 0 || bm.bmBits == IntPtr.Zero || bm.bmBitsPixel != 32) return null;
@@ -82,7 +159,23 @@ public static class IconService
             int sy = bottomUp ? h - 1 - y : y;
             Buffer.BlockCopy(src, sy * stride, dst, y * w * 4, w * 4);
         }
-        if (!anyAlpha) for (int i = 3; i < dst.Length; i += 4) dst[i] = 255; // legacy icons without alpha
+        if (!anyAlpha) { for (int i = 3; i < dst.Length; i += 4) dst[i] = 255; return new PixelImage(w, h, dst); } // legacy icons without alpha
+        // The shell usually hands back straight (non-premultiplied) alpha; WinUI composes premultiplied pixels.
+        // A colour channel above its alpha can only occur in straight alpha, so convert when one is seen.
+        bool straight = false;
+        for (int i = 0; i < dst.Length && !straight; i += 4)
+        {
+            byte a = dst[i + 3];
+            straight = dst[i] > a || dst[i + 1] > a || dst[i + 2] > a;
+        }
+        if (straight)
+            for (int i = 0; i < dst.Length; i += 4)
+            {
+                int a = dst[i + 3];
+                dst[i] = (byte)((dst[i] * a + 127) / 255);
+                dst[i + 1] = (byte)((dst[i + 1] * a + 127) / 255);
+                dst[i + 2] = (byte)((dst[i + 2] * a + 127) / 255);
+            }
         return new PixelImage(w, h, dst);
     }
 

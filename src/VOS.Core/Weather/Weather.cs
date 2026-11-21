@@ -141,20 +141,6 @@ public static class WeatherCodes
         _ => "Cloudy",
     };
 
-    /// <summary>Segoe Fluent Icons glyph for a condition.</summary>
-    public static string Glyph(Condition c, bool isDay = true) => c switch
-    {
-        Condition.Clear => isDay ? "" : "",
-        Condition.MostlyClear or Condition.PartlyCloudy => isDay ? "" : "",
-        Condition.Overcast => "",
-        Condition.Fog => "",
-        Condition.Drizzle or Condition.Rain or Condition.Showers => "",
-        Condition.HeavyRain => "",
-        Condition.FreezingRain => "",
-        Condition.Snow or Condition.SnowShowers or Condition.HeavySnow => "",
-        Condition.Thunderstorm or Condition.Hail => "",
-        _ => "",
-    };
 }
 
 public static class WeatherFormat

@@ -130,6 +130,26 @@ public static class ShellNative
 
     public static string Downloads => KnownFolderPath(FOLDERID_Downloads) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
 
+    /// <summary>
+    /// Gives a window its own AppUserModelID so Windows (taskbar, jump lists) and the V-OS dock treat it as a separate app,
+    /// even though all V-OS apps share one host process.
+    /// </summary>
+    public static void SetWindowAppId(IntPtr hwnd, string appId)
+    {
+        var iid = IID_IPropertyStore;
+        if (SHGetPropertyStoreForWindow(hwnd, ref iid, out var store) != 0 || store == null) return;
+        try
+        {
+            var key = PROPERTYKEY.AppUserModelId;
+            var pv = new PROPVARIANT { vt = 31, pointer = Marshal.StringToCoTaskMemUni(appId) };
+            store.SetValue(ref key, ref pv);
+            store.Commit();
+            pv.Clear();
+        }
+        catch (COMException) { }
+        finally { Marshal.ReleaseComObject(store); }
+    }
+
     /// <summary>AppUserModelID set on a window (packaged apps and apps that set it explicitly), or null.</summary>
     public static string? WindowAppId(IntPtr hwnd)
     {

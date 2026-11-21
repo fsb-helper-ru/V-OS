@@ -23,6 +23,8 @@ It also ships an integrated suite of apps.
 - Explorer, which keeps running underneath and is always recoverable.
 
 ## 2. Processes
+All roles below are one self-contained executable, `VOS.exe`, started in different modes (ADR-003, revised): `--shell` (default), `--app <id>`, `--launcher`, `--watchdog <pid>`, `--recover`, `--health-check`. The diagram keeps the role names.
+
 ```
  user session
  ┌──────────────────────────────────────────────────────────────────────────┐
@@ -65,7 +67,7 @@ Lower layers never reference higher ones. Modules talk to each other through Cor
 | Top bar | borderless AppWindow, AppBar-registered (reserves space), topmost, non-activating | `SystemBackdropElement` acrylic strip | one per monitor |
 | V-Pill (capsule) | transparent topmost window over the bar centre | ink capsule; composition springs animate size and corner radius on the compositor thread | window region follows the shape → clicks pass through outside it |
 | Dock | transparent topmost window | capsule glass via `SystemBackdropElement`; icon magnification by composition scale animations; implicit reorder animations | optional AppBar reservation; auto-hide with an edge trigger |
-| Panels (command, control, activity, clipboard, switcher) | transient topmost windows | acrylic plus content transitions | dismissed on deactivate or Esc |
+| Panels (command, control, activity, clipboard, switcher, drop, layout) | topmost windows that are shown once and then cloaked/uncloaked (ADR-015 §9) | acrylic plus content transitions; mask-based composition shadow | dismissed on deactivate or Esc; content is built and presented before the panel uncloaks; height can follow content; Command and Control Center are pre-built 2 s after start |
 | Desktop (immersive mode) | full-screen window kept at the bottom of the z-order | composition gradients (zero CPU) + Win2D particle layer (own thread, adaptive FPS) | paused when covered, locked, or fullscreen |
 | Widgets (companion mode) | small bottom-most windows | XAML + composition | — |
 

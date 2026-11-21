@@ -101,8 +101,10 @@ public sealed class ImmersiveRecord
 }
 
 /// <summary>
-/// Reversible changes to the Windows desktop used by immersive mode. Nothing here is persisted by Windows:
-/// restarting Explorer, the watchdog, the recovery hotkey or Launcher › Recovery restores everything.
+/// Reversible changes to the Windows desktop (companion: taskbar auto-hide; immersive: taskbar and icons hidden).
+/// Hidden windows are not persisted by Windows, but taskbar auto-hide is an Explorer setting that survives restarts,
+/// so the original value is recorded first and restored on exit, by the watchdog, at the next start, by the
+/// recovery hotkey, by Launcher › Recovery and by uninstall.
 /// </summary>
 public static class DesktopMode
 {
@@ -156,19 +158,23 @@ public static class DesktopMode
         if (lv != IntPtr.Zero) Win32.ShowWindow(lv, visible ? Win32.SW_SHOW : Win32.SW_HIDE);
     }
 
-    /// <summary>Enters immersive mode, recording the prior state first.</summary>
-    public static void Enter(bool hideTaskbar, bool hideIcons)
+    /// <summary>
+    /// Applies the desired Windows desktop state (companion: taskbar auto-hide; immersive: taskbar and icons hidden),
+    /// recording the original state the first time so recovery can always restore it.
+    /// </summary>
+    public static void Enter(bool hideTaskbarWindow, bool autoHideTaskbar, bool hideIcons)
     {
         var existing = ReadRecord();
         var record = existing is { Active: true } ? existing : new ImmersiveRecord { TaskbarWasAutoHide = TaskbarAutoHide, Since = DateTimeOffset.Now };
         record.Active = true;
         record.ShellProcessId = Environment.ProcessId;
-        record.TaskbarHidden = hideTaskbar;
+        record.TaskbarHidden = hideTaskbarWindow;
         record.DesktopIconsHidden = hideIcons;
         WriteRecord(record);
-        if (hideTaskbar) { TaskbarAutoHide = true; SetTaskbarVisible(false); }
-        if (hideIcons) SetDesktopIconsVisible(false);
-        Log.Info("Immersive mode entered", new { hideTaskbar, hideIcons });
+        TaskbarAutoHide = autoHideTaskbar || hideTaskbarWindow || record.TaskbarWasAutoHide;
+        SetTaskbarVisible(!hideTaskbarWindow);
+        SetDesktopIconsVisible(!hideIcons);
+        Log.Info("Desktop state applied", new { hideTaskbarWindow, autoHideTaskbar, hideIcons });
     }
 
     /// <summary>Restores Windows UI from the record. Safe to call any number of times, from any process.</summary>

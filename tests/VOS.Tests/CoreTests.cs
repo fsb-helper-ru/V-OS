@@ -484,4 +484,26 @@ public class PlatformNeutralServiceTests
         Assert.Equal("Before", store.Current.UserName);
         Assert.True(svc.List().Count >= 2); // includes the automatic "Before restoring" snapshot
     }
+
+    [Fact]
+    public void Process_diagnostics_report_sane_values()
+    {
+        var d = ProcessDiagnostics.Capture();
+        Assert.True(d.PrivateBytes > d.ManagedHeap && d.ManagedHeap > 0);
+        Assert.True(d.Threads > 0 && d.Handles > 0 && d.UptimeSeconds > 0);
+        var json = VosJson.Serialize(d);
+        Assert.Contains("\"privateBytes\"", json);
+    }
+
+    [Fact]
+    public void Default_hotkeys_offer_parseable_alternatives()
+    {
+        // Common chords are often taken by other apps (RegisterHotKey fails with 1409), so the important actions ship
+        // with "|"-separated fallbacks. Every alternative must be a valid gesture and no chord may repeat.
+        var bindings = new HotkeySettings().Bindings;
+        var all = bindings.SelectMany(b => b.Gesture.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToList();
+        Assert.All(all, g => Assert.True(VOS.Platform.Input.Gesture.TryParse(g, out _), $"'{g}' does not parse"));
+        Assert.Equal(all.Count, all.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Contains(bindings, b => b.Action == "command" && b.Gesture.Contains('|'));
+    }
 }

@@ -35,6 +35,11 @@ V-OS is a premium desktop environment and application ecosystem on top of Window
   The script sets `DOTNET_ROOT` and `PATH`, opts out of .NET CLI telemetry, and redirects `obj`/`bin` to a short folder when the repository path is long (ADR-012).
 - Windows long paths are disabled. Keep generated paths short.
 - Windows PowerShell 5.1 only (no `pwsh`). The OS locale is Russian, so parse tool output by structure, never by localized words.
+- **Text encoding pitfalls** (sources contain literal Unicode: icon glyphs, `·`, `›`, `°`, Russian strings):
+  - Never round-trip a source file through PowerShell 5.1 `Get-Content`/`Set-Content` without `-Encoding UTF8`: it re-encodes through cp1251 and silently corrupts glyphs (this once turned every top-bar icon into `□`).
+  - For scripted edits use `[IO.File]::ReadAllText(path, [Text.Encoding]::UTF8)` and `WriteAllText(path, text, (New-Object Text.UTF8Encoding($false)))` with **absolute** paths (.NET's working directory is not PowerShell's location).
+  - Icon glyphs are referenced by code point (`""`) in `VOS.UI/Identity.cs` (`Glyphs`). Check new glyphs with `VOS.exe --glyph-test` before using them; Segoe Fluent Icons has no weather set (use `WeatherIcon`).
+- Native shell crashes (stowed exceptions, `0xC000027B`) leave no managed log: read the Application event log (event 1000 / WER) and `%LOCALAPPDATA%\V-OS\logs`.
 
 ## Architecture rules (see ARCHITECTURE.md)
 - **UI:** WinUI 3 on Windows App SDK 2.x with Microsoft.UI.Composition. **No WPF** (ADR-001).

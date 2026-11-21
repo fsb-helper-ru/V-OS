@@ -147,4 +147,23 @@ public static class ShellMessages
     public const string Command = "command";
     public const string Open = "open";
     public const string Shutdown = "shutdown";
+    /// <summary>Runs a hotkey action by name ("control", "clipboard", "switcher"…): used by automation and UI tests.</summary>
+    public const string Action = "action";
+    /// <summary>Returns process diagnostics (memory, GC, threads, handles, uptime) as JSON.</summary>
+    public const string Diagnostics = "diag";
+}
+
+/// <summary>Process diagnostics reported over IPC (used by Monitor, the checkup command and dev tooling).</summary>
+public sealed record ProcessDiagnostics(
+    long PrivateBytes, long WorkingSet, long ManagedHeap, long GcCommitted, long GcFragmented, int Gen0, int Gen1, int Gen2,
+    int Threads, int Handles, double UptimeSeconds, double CpuSeconds)
+{
+    public static ProcessDiagnostics Capture()
+    {
+        using var p = System.Diagnostics.Process.GetCurrentProcess();
+        var gc = GC.GetGCMemoryInfo();
+        return new ProcessDiagnostics(p.PrivateMemorySize64, p.WorkingSet64, GC.GetTotalMemory(false), gc.TotalCommittedBytes, gc.FragmentedBytes,
+            GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), p.Threads.Count, p.HandleCount,
+            (DateTime.Now - p.StartTime).TotalSeconds, p.TotalProcessorTime.TotalSeconds);
+    }
 }

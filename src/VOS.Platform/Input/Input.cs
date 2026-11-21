@@ -62,24 +62,34 @@ public sealed class HotkeyManager : IDisposable
         _window.Message += OnMessage;
     }
 
-    /// <summary>Returns false (and logs) when the gesture is invalid or already taken by another app.</summary>
-    public bool Register(string action, string gesture)
+    /// <summary>Gestures that are actually registered (action → gesture), for display in Settings.</summary>
+    public Dictionary<string, string> Active { get; } = [];
+
+    /// <summary>Tries each "|"-separated alternative until one registers. Returns the active gesture, or null when all are taken.</summary>
+    public string? Register(string action, string gestures)
     {
-        if (!Gesture.TryParse(gesture, out var g)) { Log.Warn($"Invalid hotkey '{gesture}' for {action}"); return false; }
-        int id = _nextId++;
-        if (!Win32.RegisterHotKey(_window.Handle, id, g.Modifiers | Win32.MOD_NOREPEAT, g.Key))
+        foreach (var gesture in gestures.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            Log.Warn($"Hotkey {gesture} for {action} is in use by another application", null, new { error = Marshal.GetLastWin32Error() });
-            return false;
+            if (!Gesture.TryParse(gesture, out var g)) { Log.Warn($"Invalid hotkey '{gesture}' for {action}"); continue; }
+            int id = _nextId++;
+            if (!Win32.RegisterHotKey(_window.Handle, id, g.Modifiers | Win32.MOD_NOREPEAT, g.Key))
+            {
+                Log.Info($"Hotkey {gesture} for {action} is taken; trying the next alternative", new { error = Marshal.GetLastWin32Error() });
+                continue;
+            }
+            _actions[id] = action;
+            Active[action] = gesture;
+            return gesture;
         }
-        _actions[id] = action;
-        return true;
+        Log.Warn($"No free hotkey for {action} ({gestures})");
+        return null;
     }
 
     public void UnregisterAll()
     {
         foreach (var id in _actions.Keys) Win32.UnregisterHotKey(_window.Handle, id);
         _actions.Clear();
+        Active.Clear();
     }
 
     private bool OnMessage(uint msg, IntPtr w, IntPtr l)
