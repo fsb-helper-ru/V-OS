@@ -41,6 +41,9 @@ switch ($Action) {
     }
     'app' {
         $env:VOS_DATA_ROOT = $dataRoot
+        # Test runs never write into the user's Pictures or overwrite their clipboard.
+        $env:VOS_SCREENSHOTS_DIR = Join-Path $shots 'captures'
+        $env:VOS_TEST_NO_CLIPBOARD = '1'
         $args2 = @('--app') + ($Name -split ' ')
         Start-Process $exe -ArgumentList $args2 | Out-Null
         "Opened app: $Name"

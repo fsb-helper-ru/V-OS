@@ -74,6 +74,34 @@ public class PlatformTests
     }
 
     [Fact]
+    public void Winget_tables_parse_by_column_position_in_any_language()
+    {
+        var search = "   - \r   \\ \r\nName                                 Id                                   Version  Match\n" +
+                     "------------------------------------------------------------------------------------------\n" +
+                     "Microsoft Visual Studio Code         Microsoft.VisualStudioCode           1.106.0  Moniker: vscode\n" +
+                     "Microsoft Visual Studio Code Insiders Microsoft.VisualStudioCode.Insiders 1.146.0  Tag: vscode\n";
+        var s = WinGet.ParseTable(search);
+        Assert.Equal(2, s.Count);
+        Assert.Equal("Microsoft.VisualStudioCode", s[0].Id);
+        Assert.Equal("1.106.0", s[0].Version);
+        Assert.Equal("", s[0].Available);
+
+        var upgrades = "Имя              ИД                 Версия   Доступно Источник\n" +
+                       "--------------------------------------------------------------\n" +
+                       "7-Zip 24.08      7zip.7zip          24.08    25.01    winget\n" +
+                       "Mozilla Firefox  Mozilla.Firefox    131.0    145.0.1  winget\n" +
+                       "Обновлений: 2.\n";
+        var u = WinGet.ParseTable(upgrades);
+        Assert.Equal(["7zip.7zip", "Mozilla.Firefox"], u.Select(p => p.Id).ToArray());
+        Assert.Equal("25.01", u[0].Available);
+        Assert.Equal("winget", u[1].Source);
+
+        Assert.Equal(0.4, WinGet.Progress("  ██████▒▒▒▒▒▒  2.00 MB / 5.00 MB")!.Value, 3);
+        Assert.Equal(0.45, WinGet.Progress("Installing... 45%")!.Value, 3);
+        Assert.Null(WinGet.Progress("Successfully installed"));
+    }
+
+    [Fact]
     public void Hardware_probe_describes_this_machine()
     {
         var h = HardwareProbe.Probe();

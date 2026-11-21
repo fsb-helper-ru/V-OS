@@ -129,6 +129,11 @@ public static class ShellNative
     }
 
     public static string Downloads => KnownFolderPath(FOLDERID_Downloads) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+    public static readonly Guid FOLDERID_Screenshots = new("b7bede81-df94-4682-a7d8-57a52620b86f");
+    /// <summary>Pictures\Screenshots (where Windows itself saves screenshots), created on first use.</summary>
+    /// <remarks>VOS_SCREENSHOTS_DIR overrides it for automated tests, so they never write into the user's Pictures.</remarks>
+    public static string Screenshots => Directory.CreateDirectory(Environment.GetEnvironmentVariable("VOS_SCREENSHOTS_DIR") is { Length: > 0 } test ? test
+        : KnownFolderPath(FOLDERID_Screenshots) ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots")).FullName;
 
     /// <summary>
     /// Gives a window its own AppUserModelID so Windows (taskbar, jump lists) and the V-OS dock treat it as a separate app,

@@ -17,6 +17,8 @@ public interface IAppModule
     AppFrame Frame { get; }
     /// <summary>Arguments such as path=..., select=..., open=... (repeatable), section=...</summary>
     void HandleArgs(AppArgs args);
+    /// <summary>False while the module shows its own UI first (Capture's selection overlay): the host then does not bring the window forward.</summary>
+    bool ActivateOnOpen => true;
 }
 
 public sealed class AppArgs
@@ -110,7 +112,7 @@ public static class AppHost
         if (s_open.TryGetValue(id, out var existing))
         {
             if (!parsed.IsEmpty) existing.HandleArgs(parsed);
-            existing.Frame.Activate();
+            if (existing.ActivateOnOpen) existing.Frame.Activate();
             return;
         }
         if (!s_factories.TryGetValue(id, out var factory))
@@ -133,7 +135,7 @@ public static class AppHost
             s_open[id] = module;
             module.Frame.Closed += () => { s_open.Remove(id); if (s_open.Count == 0) s_idle?.Start(); };
             module.HandleArgs(parsed);
-            module.Frame.Activate();
+            if (module.ActivateOnOpen) module.Frame.Activate();
             s_idle?.Stop();
             Log.Info("App opened", new { id, ms = sw.ElapsedMilliseconds });
         }
@@ -163,6 +165,10 @@ public static class Modules
         AppHost.Register("time", () => new Time.TimeApp());
         AppHost.Register("files", () => new Files.FilesApp());
         AppHost.Register("music", () => new Music.MusicApp());
+        AppHost.Register("capture", () => new Capture.CaptureApp());
+        AppHost.Register("store", () => new Store.StoreApp());
+        AppHost.Register("gaming", () => new Gaming.GamingApp());
+        AppHost.Register("translate", () => new Translate.TranslateApp());
         AppHost.Register("browser", () => new Browser.BrowserApp());
         AppHost.Register("browser-private", () => new Browser.BrowserApp(isPrivate: true));
     }
