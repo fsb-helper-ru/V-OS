@@ -23,6 +23,55 @@ namespace VOS.Shell;
 /// precisely but re-checked at least every 30 seconds, so sleep, clock changes and edits from the app are handled.
 /// One-time alarms switch themselves off after ringing.
 /// </summary>
+/// <summary>
+/// Daily background update check (Settings › Updates › Check automatically, and Settings › Privacy › update checks).
+/// It only checks; installing is the user's choice, from the notification or the V-OS Launcher. The first check runs a
+/// few minutes after start so it never competes with startup.
+/// </summary>
+public sealed class UpdateWatcher(ShellHost host)
+{
+    private Microsoft.UI.Dispatching.DispatcherQueueTimer? _timer;
+    private string? _announced;
+
+    public void Start()
+    {
+        _timer = UiThread.Timer(TimeSpan.FromMinutes(5), () => _ = CheckIfDueAsync(), repeating: false);
+        _timer.Start();
+    }
+
+    private async Task CheckIfDueAsync()
+    {
+        try
+        {
+            var s = SettingsStore.Instance.Current;
+            var feed = VOS.Core.Updates.UpdateClient.ResolveFeed(s.Updates.FeedUrl);
+            bool due = s.Updates.LastCheck is not { } last || DateTimeOffset.Now - last > TimeSpan.FromHours(23);
+            if (!s.Updates.AutoCheck || !s.Privacy.UpdateChecks || feed == null || !due) return;
+            var result = await new VOS.Core.Updates.UpdateClient().CheckAsync(feed, AppInfo.Version, VOS.Core.Updates.ReleaseKey.PublicKeyPem);
+            SettingsStore.Instance.Update(x => x.Updates.LastCheck = DateTimeOffset.Now);
+            Log.Info("Background update check", new { result.Available, version = result.Manifest?.Version });
+            if (result.Available && result.Manifest is { } m && _announced != m.Version)
+            {
+                _announced = m.Version;
+                host.Notifications.Post(new VosNotification
+                {
+                    AppId = "updates", AppName = "V-OS", Glyph = Glyphs.Download,
+                    Title = $"V-OS {m.Version} is available",
+                    Body = "Signed and ready to install. Your settings and data are kept, and you can return to this version.",
+                    Command = "launcher:--update",
+                    Actions = [new NotificationAction { Label = "Install", Command = "launcher:--update" }],
+                });
+            }
+        }
+        catch (Exception ex) { Log.Warn("Background update check failed", ex); }
+        finally
+        {
+            _timer = UiThread.Timer(TimeSpan.FromHours(6), () => _ = CheckIfDueAsync(), repeating: false);
+            _timer.Start();
+        }
+    }
+}
+
 public sealed class AlarmWatcher(ShellHost host)
 {
     private readonly SharedJsonList<Alarm> _alarms = new("alarms.json");
@@ -402,6 +451,12 @@ public sealed class CommandRunner(ShellHost host)
                 return true;
             case "system": return await SystemAsync(arg, confirmRoot);
             case "openapp": return OpenAppByName(arg);
+            case "launcher":
+                var launcher = new ProcessStartInfo(VosExe) { UseShellExecute = false };
+                launcher.ArgumentList.Add("--launcher");
+                if (arg.Length > 0) launcher.ArgumentList.Add(arg);
+                Process.Start(launcher)?.Dispose();
+                return true;
             case "search": return arg.Trim().Length > 0 && ShellOps.OpenUrl(SearchUrl(arg.Trim()));
             case "intent": return await RunIntentAsync(CommandParser.Parse(arg), confirmRoot);
         }

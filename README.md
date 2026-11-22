@@ -4,7 +4,18 @@ A premium desktop environment and application ecosystem for Windows. It gives Wi
 
 > **Status:** in development toward 1.0.0. See [ROADMAP.md](ROADMAP.md).
 
-## Documentation
+## For users
+| Document | Purpose |
+|---|---|
+| [User guide](docs/USER-GUIDE.md) | Install, the desktop, apps, the Assistant, shortcuts, updates, troubleshooting |
+| [Known limitations](docs/LIMITATIONS.md) | What V-OS 1.0 does not do yet |
+| [Privacy](docs/PRIVACY.md) | What stays on your PC, and every service V-OS can contact |
+| [Security](docs/SECURITY.md) | Security model, signed updates, reporting problems |
+| [Third-party notices](THIRD-PARTY-NOTICES.md) | Open-source components and services |
+
+Install by running `V-Launcher.exe`: per user, no administrator rights, signed releases, automatic rollback if an update does not start.
+
+## For developers
 | Document | Purpose |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Permanent engineering instructions for AI-assisted development |
@@ -29,7 +40,10 @@ A premium desktop environment and application ecosystem for Windows. It gives Wi
 ```powershell
 . .\build\dev-env.ps1
 dotnet build V-OS.slnx -c Debug
+dotnet test tests\VOS.Tests
+.\build\build.ps1          # release: artifacts\release\<version>\
 ```
+Release builds are signed with a key kept outside the repository (see CLAUDE.md, "Build and test").
 
 ## Development audit
 Run `/v-os-checkup` in Claude Code inside this folder for a read-only audit of tools, SDKs, packages, integrations, GitHub, tests and security. It produces a prioritized report and changes nothing. You can add a focus: `/v-os-checkup security`, `/v-os-checkup perf`, `/v-os-checkup github` or `/v-os-checkup deps`.

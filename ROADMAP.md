@@ -27,7 +27,7 @@ _Last updated: 2026-11-22._
 
 ## Phase 3 — Shell ✅
 - ✅ Top bar · V-Pill capsule · dock · desktop and ambient · widgets
-- ✅ Command and search · control center (including output device and per-app volume) · activity center (notifications plus timeline)
+- ✅ Command and search · control center (Wi-Fi, Bluetooth, Focus, theme, performance profile, volume and output device, brightness) · activity center (notifications plus timeline)
 - ✅ Clipboard · drop shelf · switcher · layout zones · workspaces · focus · flows · alarms · lock presentation
 - ✅ Onboarding · companion and immersive modes · watchdog and recovery
 

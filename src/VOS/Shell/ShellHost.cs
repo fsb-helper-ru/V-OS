@@ -34,6 +34,7 @@ public sealed class ShellHost
     public TimerStore Timers { get; } = new();
     public AlarmWatcher Alarms { get; private set; } = null!;
     public FlowEngine Flows { get; private set; } = null!;
+    public UpdateWatcher UpdateChecks { get; private set; } = null!;
     public NotificationCenter Notifications { get; } = new();
     public ActivityManager Activities { get; } = new();
     public QualityGovernor Quality { get; } = new();
@@ -121,6 +122,8 @@ public sealed class ShellHost
         ApplyMode(Settings.Current.Shell.Mode);
         Flows = new FlowEngine(this);
         Flows.Start();
+        UpdateChecks = new UpdateWatcher(this);
+        UpdateChecks.Start();
         Log.Info("Shell ready", new { ms = sw.ElapsedMilliseconds, quality = VisualQuality.Current.Profile.ToString() });
         // Idle-time warm-up: the panels opened most often are built and rendered once, invisibly.
         _warmup = UiThread.Timer(TimeSpan.FromSeconds(2), () => Panels.Prewarm(PanelKind.Command, PanelKind.Control), repeating: false);

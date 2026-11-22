@@ -73,7 +73,7 @@ Not AOT-compatible: `System.Management`, `System.Data.OleDb`. They are confined 
 |---|---|---|---|
 | Open-Meteo (forecast, geocoding, air quality) | weather | coordinates of saved locations | weather can be turned off. Commercial use needs a paid plan (ADR-011). |
 | GitHub Releases (default update feed) | updates | none beyond the HTTP request | the update check can be turned off |
-| Spotify Web API | music provider | OAuth (PKCE) with the user's own client ID | explicit sign-in |
+| (Spotify) | not integrated in 1.0: Spotify and other players are controlled through Windows media sessions | — | — |
 | Claude API (api.anthropic.com) | assistant (optional) | what the user types, plus the results of actions the assistant runs for them (for example a weather lookup) | consent screen before the first message; own API key; Settings › Privacy |
 | Ollama (user-run server) | assistant (optional) | what the user types | none on this PC (loopback); consent when the server is on another machine |
 | MyMemory / DeepL / LibreTranslate | translation (optional) | the text being translated | explicit opt-in |
