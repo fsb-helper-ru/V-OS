@@ -45,12 +45,16 @@ _Last updated: 2026-11-22._
 - ⬜ GitHub Actions CI and release workflow (needs H1)
 
 ## Phase 6 — Quality
-- 🔄 Unit and integration tests (128 passing) · live verification of every app with screenshots
-- ⬜ FlaUI UI automation suite · end-to-end install/update/rollback/uninstall (Windows Sandbox, H4)
-- ⬜ Release measurements against budgets (start, memory, 10-minute idle CPU) · documentation (user guide, limitations, privacy, security, third-party notices)
+- ✅ Unit and integration tests (133 passing) · live verification of every app with screenshots (Debug and release builds)
+- ✅ Release verification script (`build/release-check.ps1`): every app opens in the release build; shell start, memory, 10-minute idle CPU, desktop restore
+- ✅ Documentation: user guide, limitations, privacy, security, third-party notices
+- ⏸ Clean-machine end to end with real registration (Windows Sandbox, H4) · FlaUI suite in CI (scripted UI Automation checks exist today)
+- ⬜ Cold app window under 1 s (measured 1.05–1.92 s): Native AOT / startup work (ADR-017, needs the VS C++ build tools)
+- ⬜ Shell memory after 10 minutes idle under 150 MB (measured 152 MB): release pre-built panels when unused · profile the 0.176 % idle CPU (within budget, higher than the short samples)
 
 ## Phase 7 — Release 1.0.0
-- ⬜ Final build, verification, release notes, signed artifacts (when O2 is available)
+- ✅ Final build from a clean commit, verified (TESTING.md)
+- ⏸ Published release: GitHub repository and release feed (H1); Authenticode signing (O2)
 
 ## After 1.0 (tracked, not in the 1.0 scope)
 - Interface localization (English and Russian first). Today the interface is English while dates and numbers follow the regional format.
@@ -58,4 +62,4 @@ _Last updated: 2026-11-22._
 - Native AOT and trimming (ADR-017).
 
 ## Next action
-Phase 6: user documentation (guide, limitations, privacy, security, third-party notices), then the final release build with measurements.
+Owner decisions: GitHub repository and release feed (H1), a real-installation test or Windows Sandbox (H4), a code-signing certificate (O2). Then: localization, cold-start work, Music and Capture additions.

@@ -14,6 +14,13 @@ No build has been released yet.
 - Removed: the Music “Visualizer” and “Crossfade” switches, which had no effect yet (planned after 1.0).
 - Installation: `V-Launcher.exe` installs V-OS for your account without administrator rights, verifies the signed release, and also updates, repairs, rolls back and uninstalls. Updates keep the previous version and return to it automatically if the new one does not start. The V-OS Launcher shows the installation, updates, recovery tools and an exportable diagnostics report with keys removed.
 
+**Verified on the final 1.0.0 build:**
+- 133 automated tests.
+- Every app opens in the release build.
+- Install, repair, update, rollback, automatic rollback after a broken update, and uninstall, run on the real installer in a test folder.
+- Shell ready in 1.6 s, idle CPU 0.18 %, memory 147 MB at start and 152 MB after 10 idle minutes (budget 150 MB).
+- Details are in TESTING.md.
+
 **Known limitations so far:** the interface is English while dates and numbers follow the regional format; Music has no equalizer, visualizer or crossfade; Capture has no screen recording; Store needs winget; alarms and flows need the shell running; Ollama answers but cannot run actions.
 
 **Planned for 1.0.0:** the complete scope in `docs/brief/01-master-directive.md`, tracked in ROADMAP.md.

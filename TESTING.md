@@ -38,6 +38,7 @@ Rules:
 | 2026-11-22 | **Live app verification** (Debug build, dev data root, screenshots of real windows) | ✅ details below |
 | 2026-11-22 | **Delivery end to end** (release build, real V-Launcher.exe and packages, install redirected with `VOS_INSTALL_ROOT`) | ✅ details below; 1 release-blocking bug found and fixed |
 | 2026-11-22 | Unit and integration tests, including install layout, release JSON and signature, and secret redaction | ✅ 133 passed, 0 failed |
+| 2026-11-22 | **Release verification** of the final 1.0.0 build (`build/release-check.ps1`) | ✅ 14 of 14 apps open; shell ready 1.6 s, idle CPU 0.176 %, desktop restored; ❌ memory 152 MB after 10 min (budget 150) and cold app windows 1.05–1.92 s (budget 1 s), details below |
 
 ### Live shell verification (Debug build, reference machine, 2026-11-21)
 How: `dev-shell.ps1 start | shot | geometry | send | stop` with an isolated data root, screenshots via the screen DC, UI Automation for element trees, `WindowFromPoint` for hit-testing, and the shell's `diag` IPC message for memory.
@@ -72,6 +73,30 @@ Test runs avoid side effects: screenshots go to a temp folder, clipboard writes 
 | Assistant, on this PC | `12 * 7`, `5 km in miles`, help text in Markdown; `weather in London` from Open-Meteo; `timer 10 min` ran through the shell's new `run` message and appeared in the V-Pill; `open notes` opened Notes in-process |
 | Assistant, Claude | consent screen and key screen appear and react to settings at once; with a deliberately invalid key the real API returned 401 and the reply showed “The Claude API key was not accepted”; changing provider mid-chat starts a new conversation (divider shown). A successful Claude answer needs the owner's own key and has not been run. |
 | Assistant, Ollama | with no server running: “Could not reach Ollama at http://localhost:11434” |
+
+### Release verification (final 1.0.0 build, `build/release-check.ps1`, 2026-11-22)
+Real release binaries (ReadyToRun, self-contained) with a separate data folder. Each app was started in a fresh app host: its window had to appear and the process had to survive 4 s. Screenshots were reviewed.
+
+| App | Window after cold start | Result |
+|---|---|---|
+| Settings · Weather · Notes · Time · Files · Music · Store · Gaming · Translate · Connect · Assistant · Browser | 1.05–1.34 s | ✅ |
+| Flow · Monitor | 1.58 s · 1.92 s | ✅ |
+
+Cold start includes process start, runtime start, XAML and the first data load, measured by polling UI Automation every 100 ms. It is above the 1 s budget for a cold app window. A warm app host opens windows faster (the budget there is 300 ms). The cold path is the target of the Native AOT work in ADR-017.
+
+**Shell, release build** (companion mode, Command and Control panels pre-built after start):
+
+| Metric | Measured | Budget |
+|---|---|---|
+| Process start → all surfaces shown ("Shell ready") | 1,591 ms (IPC answering after 1,970 ms) | — (spike S1 bar-only frame: 780 ms) |
+| Private memory 30 s after start | 147 MB (working set 215 MB) | < 150 MB ✅ |
+| Private memory after 10 minutes idle | 152 MB | < 150 MB ❌ by 2 MB (follow-up below) |
+| Idle CPU over 10 minutes, nothing animating by request | 0.176 % of the machine (8.44 s CPU in 600 s, 8 logical processors) | < 0.5 % ✅ |
+| Graceful stop | exited cleanly; work area 1680×1002 before and after | restored ✅ |
+
+Follow-ups:
+- Memory: the two pre-built panels account for 34–43 MB (Debug figures above). Options are releasing them after a period without use, or pre-building one.
+- CPU: 0.176 % over 10 minutes is higher than the 30-second development samples (0.007 %). The remaining periodic work (clock, weather refresh, ambient desktop) gets a profiler pass (`dotnet-trace`) before 1.0 is published.
 
 ### Delivery end to end (release build 1.0.0 / 1.0.1, 2026-11-22)
 The real artifacts of `build/build.ps1`, installed into a temp folder (`VOS_INSTALL_ROOT`, `VOS_DATA_ROOT`), so nothing was registered with Windows. Task-dialog buttons were pressed with `TDM_CLICK_BUTTON`.

@@ -28,6 +28,13 @@ _Last audit: 2026-11-21 (initial audit). Re-run with `/v-os-checkup`._
 | O1 Visual Studio Build Tools | ⏸ deferred by the owner (see below) |
 
 ### When deferred tools become necessary
+**Status 2026-11-22:**
+- The install → update → forced failure → rollback → uninstall cycle has passed on real artifacts. It ran in a redirected folder (`VOS_INSTALL_ROOT`), so nothing was registered with Windows.
+- What is still unproven needs either Windows Sandbox or the owner's go-ahead for a real per-user install on this PC:
+  - registration with Windows: the Apps entry, Start-menu shortcuts and the sign-in entry;
+  - a truly clean machine without the .NET SDK or developer tools.
+- The VS C++ build tools are now the path to the cold-start budget: app windows open in 1.05–1.92 s cold against a 1 s budget, and Native AOT is the lever (details below).
+
 - **Windows Sandbox (H4).** Needed at the start of **Phase 6 (end-to-end QA)**. Until then, end-to-end testing waits for the owner's decision.
   - First, the install → update → forced failure → rollback → uninstall cycle must be proven on a *clean* Windows. Your PC already has every prerequisite, so it cannot prove a clean-machine install.
   - Second, immersive mode hides the taskbar and desktop icons and hooks the Win key. Its recovery paths should be tested away from your real desktop.

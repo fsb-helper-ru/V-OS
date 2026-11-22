@@ -104,12 +104,23 @@ public sealed class InstallLayout(string root)
         if (!File.Exists(Path.Combine(Staging, "VOS.exe"))) throw new InvalidOperationException("No version is staged.");
         DeleteDirectory(Previous);
         bool hadApp = Directory.Exists(App);
-        if (hadApp) Directory.Move(App, Previous);
-        try { Directory.Move(Staging, App); }
+        if (hadApp) Move(App, Previous);
+        try { Move(Staging, App); }
         catch
         {
-            if (hadApp && !Directory.Exists(App) && Directory.Exists(Previous)) Directory.Move(Previous, App);
+            if (hadApp && !Directory.Exists(App) && Directory.Exists(Previous)) Move(Previous, App);
             throw;
+        }
+    }
+
+    /// <summary>Directory move with short retries: antivirus scanners and indexers can hold freshly written files for a
+    /// moment, which makes a move fail although nothing is really in use.</summary>
+    private static void Move(string from, string to)
+    {
+        for (int attempt = 0; ; attempt++)
+        {
+            try { Directory.Move(from, to); return; }
+            catch (Exception ex) when (attempt < 6 && ex is IOException or UnauthorizedAccessException) { Thread.Sleep(250 * (attempt + 1)); }
         }
     }
 
@@ -119,8 +130,15 @@ public sealed class InstallLayout(string root)
         if (!HasRollback) return false;
         var failed = Path.Combine(Root, "app.failed");
         DeleteDirectory(failed);
-        if (Directory.Exists(App)) Directory.Move(App, failed);
-        Directory.Move(Previous, App);
+        bool hadApp = Directory.Exists(App);
+        if (hadApp) Move(App, failed);
+        try { Move(Previous, App); }
+        catch
+        {
+            // Never leave the installation without an app folder: put the active version back.
+            if (hadApp && !Directory.Exists(App) && Directory.Exists(failed)) Move(failed, App);
+            throw;
+        }
         try { DeleteDirectory(failed); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         return true;
     }
