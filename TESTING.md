@@ -38,6 +38,7 @@ Rules:
 | 2026-11-22 | **Live app verification** (Debug build, dev data root, screenshots of real windows) | ✅ details below |
 | 2026-11-22 | **Delivery end to end** (release build, real V-Launcher.exe and packages, install redirected with `VOS_INSTALL_ROOT`) | ✅ details below; 1 release-blocking bug found and fixed |
 | 2026-11-22 | Unit and integration tests, including install layout, release JSON and signature, and secret redaction | ✅ 133 passed, 0 failed |
+| 2026-11-22 | Reproducibility: two builds of commit a90366d on this machine | ✅ package, V-Launcher.exe and symbols byte-identical; vos-release.json identical except the ECDSA signature, which is randomized at each signing (both verify) |
 | 2026-11-22 | **Release verification** of the final 1.0.0 build (`build/release-check.ps1`) | ✅ 14 of 14 apps open; shell ready 1.6 s, idle CPU 0.176 %, desktop restored; ❌ memory 152 MB after 10 min (budget 150) and cold app windows 1.05–1.92 s (budget 1 s), details below |
 
 ### Live shell verification (Debug build, reference machine, 2026-11-21)
