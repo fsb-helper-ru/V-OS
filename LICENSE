@@ -1,0 +1,17 @@
+Copyright (c) 2026 V-OS Project. All rights reserved.
+
+V-OS, including its source code, binaries, documentation, icons and design, is proprietary.
+
+The source code is published so that it can be read and reviewed. No permission is granted to use, copy, modify,
+merge, publish, distribute, sublicense or sell any part of it, in source or binary form, without prior written
+permission from the copyright holder. Using a published release of V-OS on your own computers is permitted.
+
+Publishing the repository on GitHub also grants the rights in GitHub's Terms of Service, such as viewing the code and
+forking it within GitHub. No other right is granted.
+
+Third-party components included in V-OS remain under their own licenses; see THIRD-PARTY-NOTICES.md.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR ITS USE.

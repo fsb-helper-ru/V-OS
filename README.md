@@ -45,5 +45,11 @@ dotnet test tests\VOS.Tests
 ```
 Release builds are signed with a key kept outside the repository (see CLAUDE.md, "Build and test").
 
+## License
+Copyright (c) 2026 V-OS Project. **All rights reserved.**
+- The source is published to be read; using, copying, modifying or redistributing it needs written permission.
+- Running a published release on your own computers is permitted.
+- Details are in [LICENSE](LICENSE). Third-party components keep their own licenses ([THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
+
 ## Development audit
 Run `/v-os-checkup` in Claude Code inside this folder for a read-only audit of tools, SDKs, packages, integrations, GitHub, tests and security. It produces a prioritized report and changes nothing. You can add a focus: `/v-os-checkup security`, `/v-os-checkup perf`, `/v-os-checkup github` or `/v-os-checkup deps`.
