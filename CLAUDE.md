@@ -5,6 +5,7 @@ V-OS is a premium desktop environment and application ecosystem on top of Window
 **The goal:** one complete, integrated, tested, installable release. Not a mockup, not milestones handed to the owner to assemble.
 
 ## Read before significant work
+The owner's directives in `docs/brief/` are kept on this machine only (git-ignored, not published).
 - `docs/brief/01-master-directive.md`: product requirements (owner's words, verbatim)
 - `docs/brief/02-engineering-directive.md`: permanent engineering rules (verbatim)
 - `docs/brief/03-ui-framework-directive.md`: UI framework directive (verbatim)

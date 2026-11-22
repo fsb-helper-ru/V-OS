@@ -71,11 +71,12 @@ _Last audit: 2026-11-21 (initial audit). Re-run with `/v-os-checkup`._
 ### GitHub connectivity
 | Item | Status |
 |---|---|
-| Git | 2.56.1, with user name and email configured |
+| Git | 2.56.1. This repository commits as `fsb-helper-ru` with the GitHub noreply address (repository-local config); the history was rewritten to that identity before publication (2026-11-22). |
 | Git Credential Manager | 2.9.1, configured as the system helper. Browser sign-in happens on first push. |
 | `api.github.com` | reachable |
-| GitHub CLI (`gh`) | **not installed** |
-| Remote repository | **none yet** |
+| GitHub CLI (`gh`) | 2.105.0, installed and signed in by the owner (account `fsb-helper-ru`, scopes repo, workflow, gist, read:org). Not on the PATH of shells started before the install: use `C:Program FilesGitHub CLIgh.exe`. |
+| Remote repository | `https://github.com/fsb-helper-ru/V-OS` (public; created 2026-11-22 with the owner's approval). Site: GitHub Pages from `/docs`. Release feed: `releases/latest/download/vos-release.json`. Pushes and releases only with the owner's explicit approval. |
+| GitHub MCP connector (plugin) | Not usable: GitHub's remote MCP server does not support OAuth sign-in from Claude Desktop (needs a registered GitHub App). The CLI covers everything, including release uploads. |
 
 ---
 

@@ -26,7 +26,7 @@ Install by running `V-Launcher.exe`: per user, no administrator rights, signed r
 | [INTEGRATIONS.md](INTEGRATIONS.md) | Connected and recommended tools and integrations |
 | [TESTING.md](TESTING.md) | Test strategy, performance budgets, measured results |
 | [RELEASE_NOTES.md](RELEASE_NOTES.md) | Release history |
-| [docs/brief/](docs/brief/) | The owner's original directives, verbatim |
+| `docs/brief/` (local only, not published) | The owner's original directives, verbatim |
 
 ## Technology
 - **Language and runtime:** C# on .NET 10 LTS.

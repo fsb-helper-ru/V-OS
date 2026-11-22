@@ -18,3 +18,5 @@ TestResults/
 .claude/settings.local.json
 # Spike output (evidence is copied to docs/spikes)
 prototypes/**/results/
+# The owner's original directives stay on this machine (not published)
+docs/brief/

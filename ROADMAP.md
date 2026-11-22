@@ -41,7 +41,8 @@ _Last updated: 2026-11-22._
 - ✅ WinUI launcher (`--launcher`): setup completion and registration, signed updates, rollback, repair, recovery, diagnostics export, uninstall
 - ✅ Reproducible `build/build.ps1` with `VOS.BuildTool`: deterministic package, signed manifest, verification; V-OS icon
 - ✅ End-to-end delivery test on real artifacts (redirected install): install, repair, update, rollback, automatic rollback, uninstall
-- ⏸ Real-installation test (Apps entry, Start menu) and hosted HTTPS feed: Windows Sandbox (H4) or the owner's go-ahead; GitHub release (H1)
+- ✅ Hosted HTTPS feed: GitHub release of fsb-helper-ru/V-OS (H1)
+- ⏸ Real-installation test (Apps entry, Start menu): Windows Sandbox (H4) or the owner's go-ahead
 - ⬜ GitHub Actions CI and release workflow (needs H1)
 
 ## Phase 6 — Quality
@@ -54,7 +55,8 @@ _Last updated: 2026-11-22._
 
 ## Phase 7 — Release 1.0.0
 - ✅ Final build from a clean commit, verified (TESTING.md)
-- ⏸ Published release: GitHub repository and release feed (H1); Authenticode signing (O2)
+- ✅ Published: public repository, GitHub Pages site and release v1.0.0 (2026-11-22)
+- ✖ Authenticode signing (O2): declined by the owner (cost). SmartScreen shows a warning on first run; this is documented on the site, in the release and in LIMITATIONS.md.
 
 ## After 1.0 (tracked, not in the 1.0 scope)
 - Interface localization (English and Russian first). Today the interface is English while dates and numbers follow the regional format.
@@ -62,4 +64,4 @@ _Last updated: 2026-11-22._
 - Native AOT and trimming (ADR-017).
 
 ## Next action
-Owner decisions: GitHub repository and release feed (H1), a real-installation test or Windows Sandbox (H4), a code-signing certificate (O2). Then: localization, cold-start work, Music and Capture additions.
+Owner decision: a real-installation test or Windows Sandbox (H4). Then: localization, cold-start work, shell memory, Music and Capture additions.

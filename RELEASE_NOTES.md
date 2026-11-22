@@ -23,6 +23,6 @@ No build has been released yet.
 
 **Known limitations so far:** the interface is English while dates and numbers follow the regional format; Music has no equalizer, visualizer or crossfade; Capture has no screen recording; Store needs winget; alarms and flows need the shell running; Ollama answers but cannot run actions.
 
-**Planned for 1.0.0:** the complete scope in `docs/brief/01-master-directive.md`, tracked in ROADMAP.md.
+**Planned for 1.0.0:** the complete scope of the owner's master directive (kept locally), tracked in ROADMAP.md.
 
 Release entries will list user-visible changes, known limitations, and verified test results for each version.

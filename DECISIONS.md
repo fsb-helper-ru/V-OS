@@ -9,7 +9,7 @@ Status values: **Accepted**, **Accepted — validation pending** (a spike must c
 
 **Status:** **Accepted — validated by spike S1** (2026-11-21, `docs/spikes/S1/README.md`). The owner approved the architecture on 2026-11-21.
 **Supersedes:** the initial WPF plan of 2026-11-21, made before any UI code existed.
-**Trigger:** owner directive `docs/brief/03-ui-framework-directive.md`.
+**Trigger:** owner directive on the UI framework (`docs/brief/03-ui-framework-directive.md`, kept locally).
 
 ### Context
 V-OS's shell is the most demanding UI on the machine. It is always visible, animated, translucent, and stacked above every other application. It needs:
