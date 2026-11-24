@@ -1,0 +1,35 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Acquire-By-Hash: yes
+Architectures: amd64
+Codename: resolute
+Components: main
+Date: Tue, 24 Nov 2026 20:50:32 +0000
+Description: Updates of V-OS
+Label: V-OS
+Origin: V-OS
+Suite: resolute
+MD5Sum:
+ 91eacbe5d92918e64c1cbaf757af0fe7             2695 main/binary-amd64/Packages
+ 8ec5fc0d460ebae31f4ff5c4c6a6794d             1351 main/binary-amd64/Packages.gz
+ d4294f6022a08936b5b6eb5ce0b3a279             1392 main/binary-amd64/Packages.xz
+SHA1:
+ 481313a71ec16d46130b042ca2a09bc085335a9e             2695 main/binary-amd64/Packages
+ 9b41aab039e2e6a0334d143257602e64fa1ade52             1351 main/binary-amd64/Packages.gz
+ 362f1288a018ca20758f8d5e675c2d1871983d03             1392 main/binary-amd64/Packages.xz
+SHA256:
+ 787822be687444c8b47960d80c3b1ee045742c122738474135a648b4666536a1             2695 main/binary-amd64/Packages
+ a487c351bab3f31b4cbe5cc7546dbf68ef5d529982f6e665455da4780d7d4e0b             1351 main/binary-amd64/Packages.gz
+ 409047f3267894d3b2a1667a9ed30db79d15f49e6b37ebec83ea338fa73751f5             1392 main/binary-amd64/Packages.xz
+SHA512:
+ 3b2745a55294e135bda4b70593744095263763199c4c0cd5305e7485c91c779ec40252cdbe2516763fb62d4b8780285bd2ba8d2bd0bdd99ad312a0ef45f07778             2695 main/binary-amd64/Packages
+ 85959c14b40b90e5ae2eeada44c3f5567fae90371f138a67527ee1b9b627a43446c0b85634f6b26f1958ea12961e15a3c40b12d798e5a0971c3872aaa038444f             1351 main/binary-amd64/Packages.gz
+ 2fde30a24da95735dc9ccad889355eca6ded0b0ea75526e2b34de0e3b3e99be7132259b5526ffd7e14950f96a2f03879248eb16d13de157fd23299eb6fa63386             1392 main/binary-amd64/Packages.xz
+-----BEGIN PGP SIGNATURE-----
+
+iHUEARYKAB0WIQSUu33DrhmzOa+iuDvBbrhGmFw/NAUCawX4mAAKCRDBbrhGmFw/
+NOQBAP9I6fx3ZGr+rziRxiYavHUmubSBdwJuCk8PSg38aJb8cQEAmju8f5K4PB30
+8LT5v2EWhuTArQKn/mIRYHpzBf/JSgo=
+=HKy0
+-----END PGP SIGNATURE-----
