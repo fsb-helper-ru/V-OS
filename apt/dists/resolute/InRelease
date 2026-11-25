@@ -5,31 +5,31 @@ Acquire-By-Hash: yes
 Architectures: amd64
 Codename: resolute
 Components: main
-Date: Tue, 24 Nov 2026 20:50:32 +0000
+Date: Wed, 25 Nov 2026 05:57:30 +0000
 Description: Updates of V-OS
 Label: V-OS
 Origin: V-OS
 Suite: resolute
 MD5Sum:
- 91eacbe5d92918e64c1cbaf757af0fe7             2695 main/binary-amd64/Packages
- 8ec5fc0d460ebae31f4ff5c4c6a6794d             1351 main/binary-amd64/Packages.gz
- d4294f6022a08936b5b6eb5ce0b3a279             1392 main/binary-amd64/Packages.xz
+ de82de17a565e0226fcd2ddbd3a28728             5402 main/binary-amd64/Packages
+ aa84bcf56eb9ec7157c2a21a5ac20b52             1600 main/binary-amd64/Packages.gz
+ 217a073fe265570ba6bb1e727763e5e2             1592 main/binary-amd64/Packages.xz
 SHA1:
- 481313a71ec16d46130b042ca2a09bc085335a9e             2695 main/binary-amd64/Packages
- 9b41aab039e2e6a0334d143257602e64fa1ade52             1351 main/binary-amd64/Packages.gz
- 362f1288a018ca20758f8d5e675c2d1871983d03             1392 main/binary-amd64/Packages.xz
+ 45cf7339a4ad49060a129732c92df82a8fc27fbf             5402 main/binary-amd64/Packages
+ 7fcdfaa556a2f1ae23eaf2a27becd8d7cc768b1e             1600 main/binary-amd64/Packages.gz
+ 2d21e17b788bc0b35c96a142b3e9684f41286bbf             1592 main/binary-amd64/Packages.xz
 SHA256:
- 787822be687444c8b47960d80c3b1ee045742c122738474135a648b4666536a1             2695 main/binary-amd64/Packages
- a487c351bab3f31b4cbe5cc7546dbf68ef5d529982f6e665455da4780d7d4e0b             1351 main/binary-amd64/Packages.gz
- 409047f3267894d3b2a1667a9ed30db79d15f49e6b37ebec83ea338fa73751f5             1392 main/binary-amd64/Packages.xz
+ 11add87174abba9d0158e03a5cf32b031eb83c79d3156956758d09401576d3e2             5402 main/binary-amd64/Packages
+ 516dcfa0737838c60782ddd95d079a4e8a2b1ca84ac70b51d04ad67a764ebdd4             1600 main/binary-amd64/Packages.gz
+ 397c42098b693dfa4e58413050e6ac34fa6323d163e50570a490dcf66c2e1221             1592 main/binary-amd64/Packages.xz
 SHA512:
- 3b2745a55294e135bda4b70593744095263763199c4c0cd5305e7485c91c779ec40252cdbe2516763fb62d4b8780285bd2ba8d2bd0bdd99ad312a0ef45f07778             2695 main/binary-amd64/Packages
- 85959c14b40b90e5ae2eeada44c3f5567fae90371f138a67527ee1b9b627a43446c0b85634f6b26f1958ea12961e15a3c40b12d798e5a0971c3872aaa038444f             1351 main/binary-amd64/Packages.gz
- 2fde30a24da95735dc9ccad889355eca6ded0b0ea75526e2b34de0e3b3e99be7132259b5526ffd7e14950f96a2f03879248eb16d13de157fd23299eb6fa63386             1392 main/binary-amd64/Packages.xz
+ 513c382c9225d353295bc4172483402dbe8d147c2a00486c907b685db5808e5ca4fbc3ed994ef4d7cb55d1358bc89a192aceca9121487e9014b9aa6ad4c5aa0b             5402 main/binary-amd64/Packages
+ d566feaeb29421cca0d4dfb4b8c2f3b04af5b81ced0f79d8586189134dd005561ed1d9fdbc4642a553b010e3f632ccbf20073e7b75cfad8fe821043e893af1f2             1600 main/binary-amd64/Packages.gz
+ 7c7b888311d3dfeff00433827303c91d49d506c6bb4d50140e2cf9d3c0861e0d48236ff497939fcf148bd969a1c33545c19b26364f93d6267c9ebfdc1e49e274             1592 main/binary-amd64/Packages.xz
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQSUu33DrhmzOa+iuDvBbrhGmFw/NAUCawX4mAAKCRDBbrhGmFw/
-NOQBAP9I6fx3ZGr+rziRxiYavHUmubSBdwJuCk8PSg38aJb8cQEAmju8f5K4PB30
-8LT5v2EWhuTArQKn/mIRYHpzBf/JSgo=
-=HKy0
+iHUEARYKAB0WIQSUu33DrhmzOa+iuDvBbrhGmFw/NAUCawZ4ygAKCRDBbrhGmFw/
+NBxlAP44LubfEz5VVqcQmjATp9v9DgkM5RB9JJB8aDIPkvy5YQD/RKJIEN9XB70m
+OuF+psHCIYI8HNiKoT8zULDEmObg+wI=
+=jgUD
 -----END PGP SIGNATURE-----

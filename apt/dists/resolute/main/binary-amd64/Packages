@@ -24,3 +24,29 @@ Description: Desktop of V-OS, on the foundations of Kubuntu
  Kubuntu and KDE Plasma (KWin and the services of the session). After
  installing, open “V-OS” and choose “Transform into V-OS”.
 
+Package: v-os
+Architecture: amd64
+Version: 0.4.2
+Priority: optional
+Section: x11
+Maintainer: V-OS <packages@v-os.invalid>
+Installed-Size: 38592
+Depends: plasma-workspace (>= 4:6.6), kwin-wayland (>= 4:6.6), qml6-module-org-kde-kirigami, qml6-module-org-kde-layershell, qml6-module-org-kde-pipewire, qml6-module-qtcore, qml6-module-qtquick, qml6-module-qtquick-dialogs, qml6-module-qtquick-effects, qml6-module-qtquick-shapes, qml6-module-qtquick-templates, qml6-module-qtwebchannel, qml6-module-qtwebengine, flatpak, packagekit, ffmpeg, squashfs-tools, fonts-ibm-plex, pipewire-bin, kio6, libc6 (>= 2.38), libgcc-s1 (>= 3.0), libkdecorations3-6 (>= 4:6.4.90), libkf6archive6 (>= 6.0.0), libkf6configcore6 (>= 6.0.0), libkf6coreaddons6 (>= 6.0.0), libkf6dbusaddons6 (>= 6.0.0), libkf6globalaccel6 (>= 6.0.0), libkf6guiaddons6 (>= 6.0.0), libkf6kiocore6 (>= 6.0.0), libkf6kiogui6 (>= 6.0.0), libkf6networkmanagerqt6 (>= 6.0.0), libkf6pulseaudioqt5 (>= 1.6.0), libkf6service-bin, libkf6service6 (>= 6.0.0), libkf6solid6 (>= 6.0.0), libkf6windowsystem6 (>= 6.19.0), libpipewire-0.3-0t64 (>= 0.3.1), libqt6core6t64 (>= 6.10.2), libqt6dbus6 (>= 6.8.2), libqt6gui6 (>= 6.9.1), libqt6network6 (>= 6.6.0), libqt6qml6 (>= 6.10.2), libqt6quick6 (>= 6.6.0), libqt6quickcontrols2-6 (>= 6.6.0), libqt6waylandclient6 (>= 6.10.2), libqt6webenginecore6 (>= 6.8.2), libqt6webenginecore6-bin (>= 6.8.2), libqt6webenginequick6 (>= 6.9.1), libstdc++6 (>= 14), libwayland-client0 (>= 1.20.0), qt6-declarative-private-abi (= 6.10.2), qt6-webengine-private-abi (= 6.10.2)
+Recommends: sddm (>= 0.21), wine64, wine, fonts-wine, clamav-daemon, clamav-freshclam
+Filename: pool/main/v/v-os/v-os_0.4.2_amd64.deb
+Size: 12556260
+MD5sum: 40c9bc083cd927fe3856248bfe44207c
+SHA1: 6e84563b577fa184b3dd2c36e8a86771d6e09f81
+SHA256: 2823618f376a3c004b24aec38419baac68672f6dd6443c94206f5dd4ddea608b
+SHA512: d0d7c51dd47a5e7cbec7351d8a6920681b1051c297adf9e51f01c76740fce73a7af2a770187645ee299cc06c4ec54bd5bb168d3c7c280187fd0b0c62b81e192c
+Description: Desktop of V-OS, on the foundations of Kubuntu
+ Рабочий стол V-OS: своя оболочка, рамки окон, программы, экран входа
+ и приветствие поверх Kubuntu. После установки откройте «V-OS» и нажмите
+ «Преображение в V-OS».
+ .
+ The desktop of V-OS: its own shell, window frames, applications (settings,
+ files, browser, system monitor, app centre, updates, drivers, recovery, a
+ program installer), login screen, sounds and welcome, on the foundations of
+ Kubuntu and KDE Plasma (KWin and the services of the session). After
+ installing, open “V-OS” and choose “Transform into V-OS”.
+
